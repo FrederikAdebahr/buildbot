@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import "dotenv/config";
 
 import { dirname, importx } from "@discordx/importer";
 import type { Interaction, Message } from "discord.js";
@@ -20,11 +21,6 @@ export const bot = new Client({
 
   // Debug logs are disabled in silent mode
   silent: false,
-
-  // Configuration for @SimpleCommand
-  simpleCommand: {
-    prefix: "!",
-  },
 });
 
 bot.once("ready", async () => {
@@ -62,12 +58,12 @@ async function run() {
   await importx(dirname(import.meta.url) + "/{events,commands}/**/*.{ts,js}");
 
   // Let's start the bot
-  if (!process.env.BOT_TOKEN) {
+  if (!process.env.DISCORD_TOKEN) {
     throw Error("Could not find BOT_TOKEN in your environment");
   }
 
   // Log in with your bot token
-  await bot.login(process.env.BOT_TOKEN);
+  await bot.login(process.env.DISCORD_TOKEN);
 }
 
 run();
