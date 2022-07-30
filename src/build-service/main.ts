@@ -1,8 +1,9 @@
 import { RiotAPI, RiotAPITypes, PlatformId } from '@fightmegg/riot-api';
 import 'dotenv/config';
 import fs from 'fs';
-import { ItemBuild } from './item-build';
+import { ItemBuild } from './model/item-build';
 import path from 'path';
+import { Trinket } from './model/trinket';
 
 let rAPI: RiotAPI;
 const REGION = PlatformId.EUW1;
@@ -10,9 +11,10 @@ const CLUSTER = PlatformId.EUROPE;
 const QUEUE = RiotAPITypes.QUEUE.RANKED_SOLO_5x5;
 const ITEM_PATH = path.join('src', 'build-service', 'item.json');
 
-await updateItemBuilds();
+updateItemBuilds();
 
 async function updateItemBuilds() {
+    console.log(Trinket.FARSIGHT);
     if (!process.env.RIOT_TOKEN) {
         throw Error('Could not find RIOT_TOKEN in your environment');
     }
@@ -94,6 +96,7 @@ function extractItemBuilds(
         let itemBuildsInMatch: ItemBuild[] = [];
         matchTimelines[i].info.participants.forEach((p) =>
             itemBuildsInMatch.push({
+                completedItems: 0,
                 participantId: p.participantId,
                 championId: 0,
                 items: [],
@@ -133,8 +136,9 @@ function insertItemBuilds(matchTimeline: RiotAPITypes.MatchV5.MatchTimelineDTO, 
                 for (let i in itemBuildsInMatch) {
                     if (itemBuildsInMatch[i].participantId == event.participantId) {
                         if (event.itemId) {
-                            if (isCompletedItem(event.itemId)) {
+                            if (isCompletedItem(event.itemId) && itemBuildsInMatch[i].completedItems < 6) {
                                 itemBuildsInMatch[i].items.push(event.itemId);
+                                itemBuildsInMatch[i].completedItems++;
                             }
                         }
                     }
