@@ -4,6 +4,7 @@
   "private": true,
   "license": "MIT",
   "main": "build/main.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "build:changelog": "npx @discordx/changelog --root=src",
