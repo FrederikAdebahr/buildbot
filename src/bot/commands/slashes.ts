@@ -20,13 +20,17 @@ export class Example {
 
     @Slash()
     async build(
-        @SlashOption("champion_name", {}) championName: string,
-        @SlashOption("position", {}) position: string,
+        @SlashOption('champion_name', {}) championName: string,
+        @SlashOption('position', {}) position: string,
         interaction: CommandInteraction
     ): Promise<void> {
         const positionUp = position.toUpperCase();
         if (!(positionUp in Position)) {
-            interaction.reply(`Please specify a valid position. Valid positions are: ${Object.keys(Position).join(', ').toLowerCase()}`);
+            interaction.reply(
+                `Please specify a valid position. Valid positions are: ${Object.keys(Position)
+                    .join(', ')
+                    .toLowerCase()}`
+            );
             return;
         }
 

@@ -1,11 +1,11 @@
-import { ObjectId } from "mongodb";
+import { ObjectId } from 'mongodb';
 
 export enum Position {
     TOP = 'TOP',
     JUNGLE = 'JUNGLE',
     MID = 'MID',
     SUPPORT = 'SUPPORT',
-    BOT = 'BOT'
+    BOT = 'BOT',
 }
 
 export default class Build {
