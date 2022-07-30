@@ -7,11 +7,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "build:changelog": "npx @discordx/changelog --root=src",
-    "dev": "node --loader ts-node/esm/transpile-only src/main.ts",
-    "serve": "node build/main.js",
-    "start": "nodemon --exec node --loader ts-node/esm/transpile-only src/bot/main.ts",
-    "start:build-service": "nodemon --exec node --loader ts-node/esm/transpile-only src/build-service/main.ts"
+    "start": "nodemon --exec node --es-module-specifier-resolution=node --loader ts-node/esm/transpile-only src/bot/main.ts",
+    "start:build-service": "nodemon --exec node --es-module-specifier-resolution=node --loader ts-node/esm/transpile-only src/build-service/main.ts"
   },
   "dependencies": {
     "@discordx/importer": "^1.1.10",
@@ -23,7 +20,9 @@
     "reflect-metadata": "^0.1.13"
   },
   "devDependencies": {
+    "@types/ioredis": "^4.28.10",
     "@types/node": "^18.0.6",
+    "@types/node-fetch": "^2.6.2",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",
     "eslint": "^8.20.0",

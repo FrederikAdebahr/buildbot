@@ -33,7 +33,7 @@ async function fetchChallengerMatchIds() {
     for (let player of challengerPlayers.entries) {
         let matchHistory = await fetchMatchHistory(player);
         matchHistory.forEach((e) => matchIds.add(e));
-        //TODO Uncomment this
+        //TODO Remove this
         break;
     }
 
