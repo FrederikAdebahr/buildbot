@@ -164,10 +164,7 @@ async function insertItemBuilds(matchTimeline: RiotAPITypes.MatchV5.MatchTimelin
                         if (event.itemId) {
                             if (isTrinket(event.itemId)) {
                                 itemBuildsInMatch[i].trinket = event.itemId;
-                            } else if (
-                                (await isCompletedItem(event.itemId)) &&
-                                itemBuildsInMatch[i].completedItems < 6
-                            ) {
+                            } else if (await isCompletedItem(event.itemId)) {
                                 itemBuildsInMatch[i].items.push(event.itemId);
                                 itemBuildsInMatch[i].completedItems++;
                             }
@@ -179,7 +176,7 @@ async function insertItemBuilds(matchTimeline: RiotAPITypes.MatchV5.MatchTimelin
     }
 }
 
-async function isCompletedItem(itemId: number) {
+function isCompletedItem(itemId: number) {
     if (!items.data[itemId]) {
         console.error(`Item with id ${itemId} not found!`);
         return false;
@@ -188,7 +185,7 @@ async function isCompletedItem(itemId: number) {
         return false;
     }
 
-    return !items.data[itemId]['into'];
+    return !items.data[itemId]['into'] || hasOrnnItem(itemId);
 }
 
 function printItems(itemBuilds: ItemBuild[], matches: RiotAPITypes.MatchV5.MatchDTO[]) {
@@ -196,19 +193,20 @@ function printItems(itemBuilds: ItemBuild[], matches: RiotAPITypes.MatchV5.Match
         console.log('-------------');
         console.log('Timeline:');
         build.items.forEach((item) => console.log(getItemName(item)));
+        console.log(getItemName(build.trinket));
         console.log('-------------');
         console.log('Match:');
         for (let match of matches) {
             if (match.metadata.matchId === build.matchId) {
                 for (let participant of match.info.participants) {
                     if (participant.participantId === build.participantId) {
-                        console.log(getItemName(participant.item0));
-                        console.log(getItemName(participant.item1));
-                        console.log(getItemName(participant.item2));
-                        console.log(getItemName(participant.item3));
-                        console.log(getItemName(participant.item4));
-                        console.log(getItemName(participant.item5));
-                        console.log(getItemName(participant.item6));
+                        console.log(participant.item0 + ': ' + getItemName(participant.item0));
+                        console.log(participant.item1 + ': ' + getItemName(participant.item1));
+                        console.log(participant.item2 + ': ' + getItemName(participant.item2));
+                        console.log(participant.item3 + ': ' + getItemName(participant.item3));
+                        console.log(participant.item4 + ': ' + getItemName(participant.item4));
+                        console.log(participant.item5 + ': ' + getItemName(participant.item5));
+                        console.log(participant.item6 + ': ' + getItemName(participant.item6));
                     }
                 }
             }
@@ -224,4 +222,8 @@ function getItemName(itemId: number) {
 }
 function isTrinket(itemId: number) {
     return itemId in Trinket;
+}
+function hasOrnnItem(itemId: number) {
+    let next = items.data[itemId]['into'][0];
+    return items.data[parseInt(next)].requiredAlly != undefined;
 }
