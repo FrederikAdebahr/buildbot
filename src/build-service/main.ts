@@ -1,41 +1,45 @@
 import { RiotAPI, RiotAPITypes, PlatformId } from '@fightmegg/riot-api';
+import { SingleBar, Presets } from 'cli-progress';
 import 'dotenv/config';
-import fs from 'fs';
 import { ItemBuild } from './model/item-build';
-import path from 'path';
 import { Trinket } from './model/trinket';
 
 let rAPI: RiotAPI;
 const REGION = PlatformId.EUW1;
 const CLUSTER = PlatformId.EUROPE;
 const QUEUE = RiotAPITypes.QUEUE.RANKED_SOLO_5x5;
-const ITEM_PATH = path.join('src', 'build-service', 'item.json');
+let items: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
 
 updateItemBuilds();
 
 async function updateItemBuilds() {
-    console.log(Trinket.FARSIGHT);
     if (!process.env.RIOT_TOKEN) {
         throw Error('Could not find RIOT_TOKEN in your environment');
     }
     rAPI = new RiotAPI(process.env.RIOT_TOKEN);
+    items = await rAPI.ddragon.items();
     let challengerMatchIds = await fetchChallengerMatchIds();
     let challengerMatchTimelines = await fetchChallengerMatchTimelines(challengerMatchIds);
     let challengerMatches = await fetchChallengerMatches(challengerMatchIds);
-    let itemBuilds = extractItemBuilds(challengerMatches, challengerMatchTimelines);
-    console.log(itemBuilds);
+    let itemBuilds = await extractItemBuilds(challengerMatches, challengerMatchTimelines);
+    printItems(itemBuilds, challengerMatches);
 }
 
 async function fetchChallengerMatchIds() {
     let challengerPlayers = await fetchChallengerPlayers();
     let matchIds = new Set<string>();
 
+    console.log('Fetching challenger players...');
+    const progBar = new SingleBar({}, Presets.shades_classic);
+    progBar.start(challengerPlayers.entries.length, 0);
     for (let player of challengerPlayers.entries) {
+        progBar.increment();
         let matchHistory = await fetchMatchHistory(player);
         matchHistory.forEach((e) => matchIds.add(e));
         //TODO Remove this
         break;
     }
+    console.log('Done!');
 
     return matchIds;
 }
@@ -43,7 +47,11 @@ async function fetchChallengerMatchIds() {
 async function fetchChallengerMatchTimelines(matchIds: Set<string>) {
     let matchesTimeLine: RiotAPITypes.MatchV5.MatchTimelineDTO[] = [];
 
+    console.log('Fetching match timelines...');
+    const progBar = new SingleBar({}, Presets.shades_classic);
+    progBar.start(matchIds.entries.length, 0);
     for (let matchId of matchIds) {
+        progBar.increment();
         matchesTimeLine.push(
             await rAPI.matchV5.getMatchTimelineById({
                 cluster: CLUSTER,
@@ -51,13 +59,18 @@ async function fetchChallengerMatchTimelines(matchIds: Set<string>) {
             })
         );
     }
+    console.log('Done!');
+
     return matchesTimeLine;
 }
 
 async function fetchChallengerMatches(matchIds: Set<string>) {
     let matches: RiotAPITypes.MatchV5.MatchDTO[] = [];
-
+    console.log('Fetching matches...');
+    const progBar = new SingleBar({}, Presets.shades_classic);
+    progBar.start(matchIds.entries.length, 0);
     for (let matchId of matchIds) {
+        progBar.increment();
         matches.push(
             await rAPI.matchV5.getMatchById({
                 cluster: CLUSTER,
@@ -65,6 +78,8 @@ async function fetchChallengerMatches(matchIds: Set<string>) {
             })
         );
     }
+    console.log('Done!');
+
     return matches;
 }
 
@@ -86,31 +101,41 @@ async function fetchChallengerPlayers() {
     });
 }
 
-function extractItemBuilds(
+async function extractItemBuilds(
     matches: RiotAPITypes.MatchV5.MatchDTO[],
     matchTimelines: RiotAPITypes.MatchV5.MatchTimelineDTO[]
 ) {
-    let itemBuilds = new Map<number, number[][]>();
+    // let itemBuilds = new Map<number, number[][]>();
+    let itemBuilds: ItemBuild[] = [];
 
+    console.log('Extracting item builds...');
+    const progBar = new SingleBar({}, Presets.shades_classic);
+    progBar.start(matchTimelines.length, 0);
     for (let i in matchTimelines) {
+        progBar.increment();
         let itemBuildsInMatch: ItemBuild[] = [];
         matchTimelines[i].info.participants.forEach((p) =>
             itemBuildsInMatch.push({
+                matchId: '',
                 completedItems: 0,
                 participantId: p.participantId,
                 championId: 0,
                 items: [],
+                trinket: 0,
             })
         );
         insertChampionIds(matches, matchTimelines[i].metadata.matchId, itemBuildsInMatch);
-        insertItemBuilds(matchTimelines[i], itemBuildsInMatch);
+        await insertItemBuilds(matchTimelines[i], itemBuildsInMatch);
         for (let itemBuild of itemBuildsInMatch) {
-            if (!itemBuilds.get(itemBuild.championId)) {
-                itemBuilds.set(itemBuild.championId, []);
-            }
-            itemBuilds.get(itemBuild.championId)!.push(itemBuild.items);
+            // if (!itemBuilds.get(itemBuild.matchId)) {
+            //     itemBuilds.set(itemBuild.matchId, []);
+            // }
+            //itemBuilds.get(itemBuild.championId)!.push(itemBuild.items);
+            itemBuilds.push(itemBuild);
         }
     }
+    console.log('Done!');
+
     return itemBuilds;
 }
 
@@ -121,6 +146,7 @@ function insertChampionIds(matches: RiotAPITypes.MatchV5.MatchDTO[], matchId: st
                 for (let itemBuild of itemBuildsInMatch) {
                     if (participant.participantId === itemBuild.participantId) {
                         itemBuild.championId = participant.championId;
+                        itemBuild.matchId = matchId;
                         break;
                     }
                 }
@@ -129,14 +155,19 @@ function insertChampionIds(matches: RiotAPITypes.MatchV5.MatchDTO[], matchId: st
     }
 }
 
-function insertItemBuilds(matchTimeline: RiotAPITypes.MatchV5.MatchTimelineDTO, itemBuildsInMatch: ItemBuild[]) {
+async function insertItemBuilds(matchTimeline: RiotAPITypes.MatchV5.MatchTimelineDTO, itemBuildsInMatch: ItemBuild[]) {
     for (let frame of matchTimeline.info.frames) {
         for (let event of frame.events) {
             if (event.type === 'ITEM_PURCHASED') {
                 for (let i in itemBuildsInMatch) {
                     if (itemBuildsInMatch[i].participantId == event.participantId) {
                         if (event.itemId) {
-                            if (isCompletedItem(event.itemId) && itemBuildsInMatch[i].completedItems < 6) {
+                            if (isTrinket(event.itemId)) {
+                                itemBuildsInMatch[i].trinket = event.itemId;
+                            } else if (
+                                (await isCompletedItem(event.itemId)) &&
+                                itemBuildsInMatch[i].completedItems < 6
+                            ) {
                                 itemBuildsInMatch[i].items.push(event.itemId);
                                 itemBuildsInMatch[i].completedItems++;
                             }
@@ -148,16 +179,49 @@ function insertItemBuilds(matchTimeline: RiotAPITypes.MatchV5.MatchTimelineDTO, 
     }
 }
 
-function isCompletedItem(itemId: number) {
-    let items;
-    try {
-        items = JSON.parse(fs.readFileSync(ITEM_PATH, 'utf8'));
-    } catch {
-        console.error(`File at ${ITEM_PATH} not found!`);
-    }
-    if (!items['data'][itemId]) {
+async function isCompletedItem(itemId: number) {
+    if (!items.data[itemId]) {
         console.error(`Item with id ${itemId} not found!`);
         return false;
     }
-    return typeof items['data'][itemId]['into'] !== 'undefined' && items['data'][itemId]['into'].length > 0;
+    if (items.data[itemId].consumed) {
+        return false;
+    }
+
+    return !items.data[itemId]['into'];
+}
+
+function printItems(itemBuilds: ItemBuild[], matches: RiotAPITypes.MatchV5.MatchDTO[]) {
+    itemBuilds.forEach((build) => {
+        console.log('-------------');
+        console.log('Timeline:');
+        build.items.forEach((item) => console.log(getItemName(item)));
+        console.log('-------------');
+        console.log('Match:');
+        for (let match of matches) {
+            if (match.metadata.matchId === build.matchId) {
+                for (let participant of match.info.participants) {
+                    if (participant.participantId === build.participantId) {
+                        console.log(getItemName(participant.item0));
+                        console.log(getItemName(participant.item1));
+                        console.log(getItemName(participant.item2));
+                        console.log(getItemName(participant.item3));
+                        console.log(getItemName(participant.item4));
+                        console.log(getItemName(participant.item5));
+                        console.log(getItemName(participant.item6));
+                    }
+                }
+            }
+        }
+    });
+}
+
+function getItemName(itemId: number) {
+    if (itemId == 0) {
+        return '';
+    }
+    return items.data[itemId].name;
+}
+function isTrinket(itemId: number) {
+    return itemId in Trinket;
 }
