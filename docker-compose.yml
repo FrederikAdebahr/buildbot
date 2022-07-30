@@ -1,7 +1,11 @@
 version: "3"
+
 services:
-  app:
-    build: .
-    command: node build/main.js
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - 27017:27017
     environment:
-      - BOT_TOKEN=${BOT_TOKEN}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
