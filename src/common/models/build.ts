@@ -1,10 +1,16 @@
 import { ObjectId } from "mongodb";
 
-export type Position = 'TOP' | 'JUNGLE' | 'MID' | 'SUPPORT' | 'BOTTOM';
+export enum Position {
+    TOP = 'TOP',
+    JUNGLE = 'JUNGLE',
+    MID = 'MID',
+    SUPPORT = 'SUPPORT',
+    BOT = 'BOT'
+}
 
 export default class Build {
     constructor(
-        public championName: string,
+        public champion: number,
         public position: Position,
         public item0: number | undefined,
         public item1: number | undefined,
