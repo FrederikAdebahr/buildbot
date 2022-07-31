@@ -1,8 +1,7 @@
 import type { CommandInteraction } from 'discord.js';
 import { Discord, Slash, SlashOption } from 'discordx';
-import Build, { Position } from '../../common/models/build';
 import LolClient from '../../common/client/lol-client';
-import { createMessage } from '../tui/build-vizualiser';
+import { Position } from '../../common/models/champion-build-information';
 
 @Discord()
 export class Example {
@@ -36,11 +35,11 @@ export class Example {
 
         // TODO: Get build from database
 
-        let msg = await createMessage(
-            this.lolClient,
-            new Build(523, positionUp as Position, 1001, 2010, 2003, 1519, 1518, 1517, undefined)
-        );
+        // let msg = await createMessage(
+        //     this.lolClient,
+        //     new ChampionBuilds(523, positionUp as Position, 1001, 2010, 2003, 1519, 1518, 1517, undefined)
+        // );
 
-        interaction.reply(msg);
+        // interaction.reply(msg);
     }
 }

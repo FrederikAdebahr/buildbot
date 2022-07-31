@@ -1,8 +1,8 @@
 import * as mongoDB from 'mongodb';
 import * as dotenv from 'dotenv';
-import Build from '../models/build';
+import { ChampionBuildInformation } from '../models/champion-build-information';
 
-export const collections: { builds?: mongoDB.Collection<Build> } = {};
+export const collections: { builds?: mongoDB.Collection<ChampionBuildInformation> } = {};
 
 export async function connectToDatabase() {
     dotenv.config();
@@ -12,7 +12,7 @@ export async function connectToDatabase() {
 
     const db: mongoDB.Db = client.db(process.env.DB_NAME);
 
-    const buildsCollection: mongoDB.Collection<Build> = db.collection<Build>(process.env.BUILDS_COLLECTION_NAME ?? '');
+    const buildsCollection = db.collection<ChampionBuildInformation>(process.env.BUILDS_COLLECTION_NAME ?? '');
 
     collections.builds = buildsCollection;
 
