@@ -1,0 +1,73 @@
+import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
+import { exit } from 'process';
+import 'dotenv/config';
+
+export default class LolClient {
+    private readonly REGION = PlatformId.EUW1;
+    private readonly CLUSTER = PlatformId.EUROPE;
+    private readonly QUEUE = RiotAPITypes.QUEUE.RANKED_SOLO_5x5;
+
+    private readonly rAPI: RiotAPI;
+    private items?: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
+    private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
+
+    constructor() {
+        if (!process.env.RIOT_TOKEN) {
+            console.error('Please provide the RIOT_TOKEN environment variable');
+            exit(1);
+        }
+        this.rAPI = new RiotAPI(process.env.RIOT_TOKEN);
+    }
+
+    public async init() {
+        this.items = await this.rAPI.ddragon.items();
+        this.champions = await this.rAPI.ddragon.champion.all();
+    }
+
+    public getItem(itemId?: number) {
+        if (!itemId) {
+            return undefined;
+        }
+        return this.items?.data[itemId];
+    }
+
+    public getChampion(championId?: number) {
+        if (!championId) {
+            return undefined;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return Object.entries(this.champions!.data).find((entry) => entry[1].key === championId.toString())?.[1];
+    }
+
+    public async fetchChallengerPlayers() {
+        return await this.rAPI.league.getChallengerByQueue({
+            region: this.REGION,
+            queue: this.QUEUE,
+        });
+    }
+
+    public async fetchMatchHistoryForPlayer(player: RiotAPITypes.League.LeagueItemDTO) {
+        let summoner = await this.rAPI.summoner.getBySummonerId({
+            region: this.REGION,
+            summonerId: player.summonerId,
+        });
+        return await this.rAPI.matchV5.getIdsbyPuuid({
+            cluster: this.CLUSTER,
+            puuid: summoner.puuid,
+        });
+    }
+
+    public async fetchMatchTimelineById(matchId: string) {
+        return await this.rAPI.matchV5.getMatchTimelineById({
+            cluster: this.CLUSTER,
+            matchId,
+        });
+    }
+
+    public async fetchMatchById(matchId: string) {
+        return await this.rAPI.matchV5.getMatchById({
+            cluster: this.CLUSTER,
+            matchId: matchId,
+        });
+    }
+}

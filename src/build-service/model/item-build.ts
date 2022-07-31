@@ -1,7 +1,7 @@
 import { Trinket } from './trinket';
 
 export interface ItemBuild {
-    matchId: string,
+    matchId: string;
     completedItems: number;
     participantId: number;
     championId: number;

@@ -1,7 +1,7 @@
 import Build from '../../common/models/build';
-import LolClient from '../client/lol-client';
+import LolClient from '../../common/client/lol-client';
 
-export async function createMessage(lolClient: LolClient, build: Build): Promise<string> {
+export async function createMessage(lolClient: LolClient, build: Build) {
     let championName = lolClient.getChampionName(build.champion);
     let item0Name = lolClient.getItemName(build.item0);
     let item1Name = lolClient.getItemName(build.item1);

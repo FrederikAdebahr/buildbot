@@ -1,7 +1,7 @@
 import type { CommandInteraction } from 'discord.js';
 import { Discord, Slash, SlashOption } from 'discordx';
 import Build, { Position } from '../../common/models/build';
-import LolClient from '../client/lol-client';
+import LolClient from '../../common/client/lol-client';
 import { createMessage } from '../tui/build-vizualiser';
 
 @Discord()
@@ -23,7 +23,7 @@ export class Example {
         @SlashOption('champion_name', {}) championName: string,
         @SlashOption('position', {}) position: string,
         interaction: CommandInteraction
-    ): Promise<void> {
+    ) {
         const positionUp = position.toUpperCase();
         if (!(positionUp in Position)) {
             interaction.reply(
