@@ -1,0 +1,6 @@
+export enum EventType {
+    ITEM_PURCHASED = 'ITEM_PURCHASED',
+    ITEM_SOLD = 'ITEM_SOLD',
+    ITEM_UNDO = 'ITEM_UNDO',
+    ITEM_DESTROYED = 'ITEM_DESTROYED',
+}

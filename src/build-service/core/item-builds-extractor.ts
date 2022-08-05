@@ -1,6 +1,7 @@
 import { RiotAPITypes } from '@fightmegg/riot-api';
 import { SingleBar, Presets } from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
+import { EventType } from '../model/event-type';
 import { ItemBuild } from '../model/item-build';
 import { MatchTimeline } from '../model/match-timeline';
 import { Trinket } from '../model/trinket';
@@ -46,7 +47,7 @@ export default class ItemBuildsExtractor {
                 itemBuilds.push(itemBuild);
             }
         }
-        console.log('Done!');
+        console.log('\nDone!');
 
         return itemBuilds;
     }
@@ -65,7 +66,7 @@ export default class ItemBuildsExtractor {
             //TODO Remove this
             break;
         }
-        console.log('Done!');
+        console.log('\nDone!');
 
         return matchIds;
     }
@@ -76,13 +77,14 @@ export default class ItemBuildsExtractor {
         console.log('Fetching match timelines...');
         const progBar = new SingleBar({}, Presets.shades_classic);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        progBar.start(this.matchIds!.entries.length, 0);
+        progBar.start(this.matchIds!.size, 0);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (let matchId of this.matchIds!) {
             progBar.increment();
             matchesTimeLine.push(await this.lolClient.fetchMatchTimelineById(matchId));
         }
-        console.log('Done!');
+
+        console.log('\nDone!');
 
         return matchesTimeLine;
     }
@@ -92,13 +94,13 @@ export default class ItemBuildsExtractor {
         console.log('Fetching matches...');
         const progBar = new SingleBar({}, Presets.shades_classic);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        progBar.start(this.matchIds!.entries.length, 0);
+        progBar.start(this.matchIds!.size, 0);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (let matchId of this.matchIds!) {
             progBar.increment();
             matches.push(await this.lolClient.fetchMatchById(matchId));
         }
-        console.log('Done!');
+        console.log('\nDone!');
 
         return matches;
     }
@@ -138,19 +140,19 @@ export default class ItemBuildsExtractor {
         });
         for (let frame of matchTimeline.frames) {
             for (let event of frame.events) {
-                if (event.type === 'ITEM_PURCHASED') {
-                    for (let i in itemBuildsInMatch) {
-                        if (itemBuildsInMatch[i].participantId == event.participantId) {
-                            if (event.itemId) {
-                                if (this.isTrinket(event.itemId)) {
-                                    itemBuildsInMatch[i].trinket = event.itemId;
-                                } else if (this.isCompletedItem(event.itemId)) {
-                                    itemBuildsInMatch[i].items.push(event.itemId);
-                                    itemBuildsInMatch[i].completedItems++;
-                                }
-                            }
-                        }
-                    }
+                switch (event.type) {
+                    case EventType.ITEM_PURCHASED:
+                        this.addItemToBuild(itemBuildsInMatch, event);
+                        break;
+                    case EventType.ITEM_DESTROYED:
+                        this.removeItemFromBuild(itemBuildsInMatch, event);
+                        break;
+                    case EventType.ITEM_SOLD:
+                        this.removeItemFromBuild(itemBuildsInMatch, event);
+                        break;
+                    case EventType.ITEM_UNDO:
+                        this.applyUndoToBuild(itemBuildsInMatch, event);
+                        break;
                 }
             }
         }
@@ -170,25 +172,126 @@ export default class ItemBuildsExtractor {
         return !item.into || this.hasOrnnItem(itemId);
     }
 
+    private addItemToBuild(itemBuildsInMatch: ItemBuild[], event: RiotAPITypes.MatchV5.EventDTO) {
+        for (let i in itemBuildsInMatch) {
+            if (itemBuildsInMatch[i].participantId == event.participantId) {
+                if (event.itemId) {
+                    if (this.isTrinket(event.itemId)) {
+                        itemBuildsInMatch[i].trinket = event.itemId;
+                    } else if (this.isCompletedItem(event.itemId)) {
+                        itemBuildsInMatch[i].items.push(event.itemId);
+                        itemBuildsInMatch[i].completedItems++;
+                    }
+                }
+            }
+        }
+    }
+
+    private removeItemFromBuild(itemBuildsInMatch: ItemBuild[], event: RiotAPITypes.MatchV5.EventDTO) {
+        for (let i in itemBuildsInMatch) {
+            if (itemBuildsInMatch[i].participantId == event.participantId) {
+                if (event.itemId) {
+                    if (this.isTrinket(event.itemId)) {
+                        itemBuildsInMatch[i].trinket = 0;
+                    } else if (this.isCompletedItem(event.itemId)) {
+                        itemBuildsInMatch[i].items = itemBuildsInMatch[i].items.filter((item) => {
+                            return item !== event.itemId;
+                        });
+                        itemBuildsInMatch[i].completedItems = itemBuildsInMatch.length;
+                    }
+                }
+            }
+        }
+    }
+
+    private applyUndoToBuild(itemBuildsInMatch: ItemBuild[], event: RiotAPITypes.MatchV5.EventDTO) {
+        for (let i in itemBuildsInMatch) {
+            if (itemBuildsInMatch[i].participantId == event.participantId) {
+                if (event.beforeId && this.isCompletedItem(event.beforeId)) {
+                    if (this.isTrinket(event.beforeId)) {
+                        itemBuildsInMatch[i].trinket = 0;
+                    } else  {
+                        itemBuildsInMatch[i].items = itemBuildsInMatch[i].items.filter((item) => {
+                            return item !== event.beforeId;
+                        });
+                        itemBuildsInMatch[i].completedItems = itemBuildsInMatch.length;
+                    }
+                }
+                if (event.afterId && this.isCompletedItem(event.afterId)) {
+                    if (this.isTrinket(event.afterId)) {
+                        itemBuildsInMatch[i].trinket = event.afterId;
+                    } else {
+                        itemBuildsInMatch[i].items.push(event.afterId);
+                        itemBuildsInMatch[i].completedItems++;
+                    }
+                }
+            }
+        }
+    }
+
     private printItems(itemBuilds: ItemBuild[], matches: RiotAPITypes.MatchV5.MatchDTO[]) {
         itemBuilds.forEach((build) => {
-            console.log('-------------');
-            console.log('Timeline:');
-            build.items.forEach((item) => console.log(this.getItemName(item)));
-            console.log(this.getItemName(build.trinket));
-            console.log('-------------');
-            console.log('Match:');
+            // console.log('-------------');
+            // console.log('Timeline:');
+            // build.items.forEach((item) => console.log(this.getItemName(item)));
+            // console.log(this.getItemName(build.trinket));
+            // console.log('-------------');
+            // console.log('Match:');
             for (let match of matches) {
                 if (match.metadata.matchId === build.matchId) {
                     for (let participant of match.info.participants) {
                         if (participant.participantId === build.participantId) {
-                            console.log(participant.item0 + ': ' + this.getItemName(participant.item0));
-                            console.log(participant.item1 + ': ' + this.getItemName(participant.item1));
-                            console.log(participant.item2 + ': ' + this.getItemName(participant.item2));
-                            console.log(participant.item3 + ': ' + this.getItemName(participant.item3));
-                            console.log(participant.item4 + ': ' + this.getItemName(participant.item4));
-                            console.log(participant.item5 + ': ' + this.getItemName(participant.item5));
-                            console.log(participant.item6 + ': ' + this.getItemName(participant.item6));
+                            let matchBuild = new Set<number>();
+                            if (this.isCompletedItem(participant.item0)) {
+                                if (!this.isTrinket(participant.item0)) {
+                                    matchBuild.add(participant.item0);
+                                }
+                            }
+                            if (this.isCompletedItem(participant.item1)) {
+                                if (!this.isTrinket(participant.item1)) {
+                                    matchBuild.add(participant.item1);
+                                }
+                            }
+                            if (this.isCompletedItem(participant.item2)) {
+                                if (!this.isTrinket(participant.item2)) {
+                                    matchBuild.add(participant.item2);
+                                }
+                            }
+                            if (this.isCompletedItem(participant.item3)) {
+                                if (!this.isTrinket(participant.item3)) {
+                                    matchBuild.add(participant.item3);
+                                }
+                            }
+                            if (this.isCompletedItem(participant.item4)) {
+                                if (!this.isTrinket(participant.item4)) {
+                                    matchBuild.add(participant.item4);
+                                }
+                            }
+                            if (this.isCompletedItem(participant.item5)) {
+                                if (!this.isTrinket(participant.item5)) {
+                                    matchBuild.add(participant.item5);
+                                }
+                            }
+                            if (this.isCompletedItem(participant.item6)) {
+                                if (!this.isTrinket(participant.item6)) {
+                                    matchBuild.add(participant.item6);
+                                }
+                            }
+                            matchBuild.forEach((i) => {
+                                build.items.includes(i)
+                                    ? i
+                                    : console.log(
+                                          `Item ${this.getItemName(i)} in match but not in timeline for participant ${build.participantId}`
+                                      );
+                            });
+
+                            // console.log(participant.item0 + ': ' + this.getItemName(participant.item0));
+                            // console.log(participant.item1 + ': ' + this.getItemName(participant.item1));
+                            // console.log(participant.item2 + ': ' + this.getItemName(participant.item2));
+                            // console.log(participant.item3 + ': ' + this.getItemName(participant.item3));
+                            // console.log(participant.item4 + ': ' + this.getItemName(participant.item4));
+                            // console.log(participant.item5 + ': ' + this.getItemName(participant.item5));
+                            // console.log(participant.item6 + ': ' + this.getItemName(participant.item6));
                         }
                     }
                 }
