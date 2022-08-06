@@ -2,6 +2,8 @@ import type { CommandInteraction } from 'discord.js';
 import { Discord, Slash, SlashOption } from 'discordx';
 import LolClient from '../../common/client/lol-client';
 import { Position } from '../../common/models/champion-build-information';
+import { collections } from '../../common/services/database.service';
+import { createMessage } from '../tui/build-vizualiser';
 
 @Discord()
 export class Example {
@@ -33,13 +35,21 @@ export class Example {
             return;
         }
 
-        // TODO: Get build from database
+        const championId = this.lolClient.searchChampion(championName);
 
-        // let msg = await createMessage(
-        //     this.lolClient,
-        //     new ChampionBuilds(523, positionUp as Position, 1001, 2010, 2003, 1519, 1518, 1517, undefined)
-        // );
+        if (!championId) {
+            interaction.reply('Sorry, I could not find a champion with this name.');
+            return;
+        }
 
-        // interaction.reply(msg);
+        const buildInformation = await collections.builds?.findOne({ championId });
+
+        if (!buildInformation) {
+            interaction.reply('Sorry, we don\'t seem to have any builds available for this champion');
+            return;
+        }
+
+        const msg = await createMessage(this.lolClient, buildInformation);
+        interaction.reply(msg);
     }
 }

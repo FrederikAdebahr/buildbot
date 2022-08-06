@@ -1,6 +1,7 @@
 import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import { exit } from 'process';
 import 'dotenv/config';
+import Fuse from 'fuse.js';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
@@ -10,6 +11,7 @@ export default class LolClient {
     private readonly rAPI: RiotAPI;
     private items?: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
     private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
+    private championNamesFuse?: Fuse<RiotAPITypes.DDragon.DDragonChampionListDataDTO>;
 
     constructor() {
         if (!process.env.RIOT_TOKEN) {
@@ -22,6 +24,8 @@ export default class LolClient {
     public async init() {
         this.items = await this.rAPI.ddragon.items();
         this.champions = await this.rAPI.ddragon.champion.all();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
     }
 
     public getItem(itemId?: number) {
@@ -29,6 +33,14 @@ export default class LolClient {
             return undefined;
         }
         return this.items?.data[itemId];
+    }
+
+    public searchChampion(championSearchString: string): number | undefined {
+        const results = this.championNamesFuse?.search(championSearchString);
+        if (!results) {
+            return undefined;
+        }
+        return parseInt(results[0].item.key);
     }
 
     public getChampion(championId?: number) {

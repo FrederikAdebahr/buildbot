@@ -5,6 +5,8 @@ import { dirname, importx } from '@discordx/importer';
 import type { Interaction, Message } from 'discord.js';
 import { IntentsBitField } from 'discord.js';
 import { Client } from 'discordx';
+import { collections, connectToDatabase } from '../common/services/database.service';
+import { Position } from '../common/models/champion-build-information';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (BigInt.prototype as any).toJSON = function () {
@@ -46,6 +48,16 @@ async function run() {
     if (!process.env.DISCORD_TOKEN) {
         throw Error('Could not find BOT_TOKEN in your environment');
     }
+
+    await connectToDatabase();
+
+    // TODO: remove
+    await collections.builds?.drop();
+    await collections.builds?.insertOne({
+        championId: 67,
+        position: Position.TOP,
+        builds: [{ itemIds: [1001, 2010, 2003, 1519, 1518, 1517], trinket: undefined }],
+    });
 
     await bot.login(process.env.DISCORD_TOKEN);
 }
