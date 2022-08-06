@@ -1,5 +1,3 @@
-import { ObjectId } from 'mongodb';
-
 export enum Position {
     TOP = 'TOP',
     JUNGLE = 'JUNGLE',
@@ -11,10 +9,10 @@ export enum Position {
 export interface ChampionBuildInformation {
     championId: number;
     position: Position;
-    builds: Build[];
-    _id?: ObjectId;
+    builds: Array<Build>;
 }
 
 interface Build {
-    itemIds: number[];
+    itemIds: Array<number | undefined>;
+    trinket: number | undefined;
 }
