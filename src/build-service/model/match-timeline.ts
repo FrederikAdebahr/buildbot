@@ -1,4 +1,5 @@
 import { RiotAPITypes } from '@fightmegg/riot-api';
+import { Position } from '../../common/models/champion-build-information';
 
 export interface MatchTimeline {
     matchId: string;
@@ -9,4 +10,5 @@ export interface MatchTimeline {
 export interface MatchParticipant {
     participantId: number;
     championId: number;
+    position: Position | undefined;
 }

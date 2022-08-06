@@ -1,6 +1,7 @@
 import { RiotAPITypes } from '@fightmegg/riot-api';
 import { SingleBar, Presets } from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
+import { Position } from '../../common/models/champion-build-information';
 import { EventType } from '../model/event-type';
 import { ItemBuild } from '../model/item-build';
 import { MatchTimeline } from '../model/match-timeline';
@@ -81,7 +82,7 @@ export default class ItemBuildsExtractor {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (let matchId of this.matchIds!) {
             progBar.increment();
-            matchesTimeLine.push(await this.lolClient.fetchMatchTimelineById(matchId));
+            matchesTimeLine.push(await await this.lolClient.fetchMatchTimelineById(matchId));
         }
 
         console.log('\nDone!');
@@ -98,7 +99,7 @@ export default class ItemBuildsExtractor {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (let matchId of this.matchIds!) {
             progBar.increment();
-            matches.push(await this.lolClient.fetchMatchById(matchId));
+            matches.push(await await this.lolClient.fetchMatchById(matchId));
         }
         console.log('\nDone!');
 
@@ -119,6 +120,18 @@ export default class ItemBuildsExtractor {
                         )!.info.participants.find(
                             (matchParticipant) => matchParticipant.participantId === participant.participantId
                         )!.championId,
+                        position: this.Position(
+                            this.matchDtos
+                                ?.find((match) => match.metadata.matchId === matchTimeline.metadata.matchId)
+                                ?.info.participants.find(
+                                    (matchParticipant) => matchParticipant.participantId === participant.participantId
+                                )?.lane,
+                            this.matchDtos
+                                ?.find((match) => match.metadata.matchId === matchTimeline.metadata.matchId)
+                                ?.info.participants.find(
+                                    (matchParticipant) => matchParticipant.participantId === participant.participantId
+                                )?.role
+                        ),
                     };
                 }),
                 frames: matchTimeline.info.frames,
@@ -132,10 +145,11 @@ export default class ItemBuildsExtractor {
             return {
                 matchId: matchTimeline.matchId,
                 completedItems: 0,
+                position: participant.position,
                 participantId: participant.participantId,
                 championId: participant.championId,
                 items: [],
-                trinket: 0,
+                trinket: undefined,
             };
         });
         for (let frame of matchTimeline.frames) {
@@ -192,7 +206,7 @@ export default class ItemBuildsExtractor {
             if (itemBuildsInMatch[i].participantId == event.participantId) {
                 if (event.itemId) {
                     if (this.isTrinket(event.itemId)) {
-                        itemBuildsInMatch[i].trinket = 0;
+                        itemBuildsInMatch[i].trinket = undefined;
                     } else if (this.isCompletedItem(event.itemId)) {
                         itemBuildsInMatch[i].items = itemBuildsInMatch[i].items.filter((item) => {
                             return item !== event.itemId;
@@ -209,8 +223,8 @@ export default class ItemBuildsExtractor {
             if (itemBuildsInMatch[i].participantId == event.participantId) {
                 if (event.beforeId && this.isCompletedItem(event.beforeId)) {
                     if (this.isTrinket(event.beforeId)) {
-                        itemBuildsInMatch[i].trinket = 0;
-                    } else  {
+                        itemBuildsInMatch[i].trinket = undefined;
+                    } else {
                         itemBuildsInMatch[i].items = itemBuildsInMatch[i].items.filter((item) => {
                             return item !== event.beforeId;
                         });
@@ -232,7 +246,7 @@ export default class ItemBuildsExtractor {
     private printItems(itemBuilds: ItemBuild[], matches: RiotAPITypes.MatchV5.MatchDTO[]) {
         itemBuilds.forEach((build) => {
             // console.log('-------------');
-            // console.log('Timeline:');
+            // console.log(`Timeline: ${build.position}`);
             // build.items.forEach((item) => console.log(this.getItemName(item)));
             // console.log(this.getItemName(build.trinket));
             // console.log('-------------');
@@ -277,14 +291,15 @@ export default class ItemBuildsExtractor {
                                     matchBuild.add(participant.item6);
                                 }
                             }
-                            matchBuild.forEach((i) => {
-                                build.items.includes(i)
-                                    ? i
-                                    : console.log(
-                                          `Item ${this.getItemName(i)} in match but not in timeline for participant ${build.participantId}`
-                                      );
-                            });
-
+                            // matchBuild.forEach((i) => {
+                            //     build.items.includes(i)
+                            //         ? i
+                            //         : console.log(
+                            //               `Item ${this.getItemName(i)} in match but not in timeline for participant ${
+                            //                   build.participantId
+                            //               }`
+                            //           );
+                            // });
                             // console.log(participant.item0 + ': ' + this.getItemName(participant.item0));
                             // console.log(participant.item1 + ': ' + this.getItemName(participant.item1));
                             // console.log(participant.item2 + ': ' + this.getItemName(participant.item2));
@@ -308,6 +323,22 @@ export default class ItemBuildsExtractor {
 
     private isTrinket(itemId: number) {
         return itemId in Trinket;
+    }
+
+    private Position(lane?: string, role?: string) {
+        // console.log(lane + ' ' + role);
+        switch (lane) {
+            case 'TOP':
+                return Position.TOP;
+            case 'MIDDLE':
+                return Position.MID;
+            case 'JUNGLE':
+                return Position.JUNGLE;
+            case 'BOTTOM':
+                return role === 'CARRY' ? Position.BOT : Position.SUPPORT;
+            default:
+                return role === 'SUPPORT' ? Position.SUPPORT : undefined;
+        }
     }
 
     private hasOrnnItem(itemId: number) {
