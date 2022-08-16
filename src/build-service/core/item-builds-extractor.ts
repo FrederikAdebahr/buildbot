@@ -1,9 +1,9 @@
 import { RiotAPITypes } from '@fightmegg/riot-api';
 import { SingleBar, Presets } from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
-import { Position } from '../../common/models/champion-build-information';
+import { Build, Position } from '../../common/models/champion-build-information';
 import { EventType } from '../model/event-type';
-import { ItemBuild } from '../model/item-build';
+import { BuildKey, ItemBuild } from '../model/item-build';
 import { MatchTimeline } from '../model/match-timeline';
 import { Trinket } from '../model/trinket';
 
@@ -23,13 +23,45 @@ export default class ItemBuildsExtractor {
         this.matchTimelineDtos = await this.fetchChallengerMatchTimelines();
         this.matchDtos = await this.fetchChallengerMatches();
         this.matchTimelines = this.toMatchTimelines();
-        let itemBuilds = this.extractItemBuildsForAllMatches();
-        this.printItems(itemBuilds, this.matchDtos);
-        return itemBuilds;
+        let championBuildInfos = this.extractItemBuildsForAllMatches();
+        let mergedBuildInfos = this.mergeSubsetBuilds(championBuildInfos);
+        return championBuildInfos;
+    }
+
+    private mergeSubsetBuilds(championBuildInfos: Map<BuildKey, Build[]>) {
+        for (const key of championBuildInfos.keys()) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            let builds = championBuildInfos.get(key)!;
+            let current = builds.length;
+            do {
+                current = builds.length;
+                for (let i = 0; i < builds.length; i++) {
+                    for (let j = i + 1; j < builds.length; j++) {
+                        if (this.isSubset(builds[i], builds[j])) {
+                            builds.splice(i, 1);
+                            break;
+                        }
+                        if (this.isSubset(builds[j], builds[i])) {
+                            builds.splice(j, 1);
+                            break;
+                        }
+                    }
+                }
+            } while (current > builds.length);
+        }
+
+        return championBuildInfos;
+    }
+    isSubset(buildA: Build, buildB: Build) {
+        return (
+            buildB.itemIds.every(function (val) {
+                return buildA.itemIds.indexOf(val) >= 0;
+            }) && buildA.trinket === buildB.trinket
+        );
     }
 
     private extractItemBuildsForAllMatches() {
-        // let itemBuilds = new Map<number, number[][]>();
+        let championBuildInfos = new Map<BuildKey, Build[]>();
         let itemBuilds: ItemBuild[] = [];
 
         console.log('Extracting item builds...');
@@ -41,16 +73,33 @@ export default class ItemBuildsExtractor {
             progBar.increment();
             let itemBuildsInMatch: ItemBuild[] = this.createItemBuildsForMatch(matchTimeline);
             for (let itemBuild of itemBuildsInMatch) {
-                // if (!itemBuilds.get(itemBuild.matchId)) {
-                //     itemBuilds.set(itemBuild.matchId, []);
-                // }
-                //itemBuilds.get(itemBuild.championId)!.push(itemBuild.items);
+                if (!itemBuild.position) {
+                    continue;
+                }
+                let buildKey = this.getBuildKey(itemBuild.championId, itemBuild.position);
+                if (!championBuildInfos.get(buildKey)) {
+                    championBuildInfos.set(buildKey, []);
+                }
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                championBuildInfos.get(buildKey)!.push({
+                    itemIds: itemBuild.items,
+                    trinket: itemBuild.trinket,
+                });
                 itemBuilds.push(itemBuild);
             }
         }
         console.log('\nDone!');
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        //this.printItems(itemBuilds, this.matchDtos!);
 
-        return itemBuilds;
+        return championBuildInfos;
+    }
+
+    private getBuildKey(championId: number, position: Position) {
+        return {
+            championId: championId,
+            position: position,
+        };
     }
 
     private async retrieveChallengerMatchIds() {

@@ -8,11 +8,11 @@ export enum Position {
 
 export interface ChampionBuildInformation {
     championId: number;
-    position: Position;
+    position: Position | undefined;
     builds: Array<Build>;
 }
 
-interface Build {
+export interface Build {
     itemIds: Array<number | undefined>;
     trinket: number | undefined;
 }

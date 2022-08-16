@@ -10,3 +10,8 @@ export interface ItemBuild {
     items: number[];
     trinket: Trinket | undefined;
 }
+
+export interface BuildKey {
+    championId: number;
+    position: Position | undefined;
+}
