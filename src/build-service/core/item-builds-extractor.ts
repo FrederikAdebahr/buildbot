@@ -8,9 +8,6 @@ import { MatchTimeline } from '../model/match-timeline';
 import { Trinket } from '../model/trinket';
 import { SummonerSell } from '../model/summoner-spell';
 import { SupportItem } from '../model/support-items';
-import { writeFileSync } from 'fs';
-import { debug } from 'console';
-import { DebugStuff } from './debug-stuff';
 
 export default class ItemBuildsExtractor {
     private readonly lolClient = new LolClient();
@@ -308,19 +305,26 @@ export default class ItemBuildsExtractor {
 
         let averageXPos = 0;
         let averageYPos = 0;
+        let total = Math.min(frames.length, 5);
 
-        for (let frame of frames) {
-            let participantFrame = frame.participantFrames[participant.participantId];
+        for (let i = 1; i < total; i++) {
+            let participantFrame = frames[i].participantFrames[participant.participantId];
             averageXPos += participantFrame.position.x;
             averageYPos += participantFrame.position.y;
         }
 
-        averageXPos /= frames.length;
-        averageYPos /= frames.length;
+        averageXPos /= total - 1;
+        averageYPos /= total - 1;
 
-        console.log(averageXPos, averageYPos);
+        if (averageXPos - averageYPos < -4000) {
+            return Position.TOP;
+        }
 
-        return Position.BOT;
+        if (averageXPos - averageYPos > 4000) {
+            return Position.BOT;
+        }
+
+        return Position.MID;
     }
 
     private hasOrnnItem(itemId: number) {
