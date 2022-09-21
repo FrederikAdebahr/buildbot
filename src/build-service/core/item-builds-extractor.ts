@@ -6,6 +6,8 @@ import { EventType } from '../model/event-type';
 import { BuildKey, ItemBuild } from '../model/item-build';
 import { MatchTimeline } from '../model/match-timeline';
 import { Trinket } from '../model/trinket';
+import { SummonerSell } from '../model/summoner-spell';
+import { SupportItem } from '../model/support-items';
 
 export default class ItemBuildsExtractor {
     private readonly lolClient = new LolClient();
@@ -164,17 +166,14 @@ export default class ItemBuildsExtractor {
                         )!.info.participants.find(
                             (matchParticipant) => matchParticipant.participantId === participant.participantId
                         )!.championId,
-                        position: this.Position(
+                        position: this.calculatePosition(
+                            matchTimeline.info.frames,
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
                             this.matchDtos
                                 ?.find((match) => match.metadata.matchId === matchTimeline.metadata.matchId)
                                 ?.info.participants.find(
-                                    (matchParticipant) => matchParticipant.participantId === participant.participantId
-                                )?.lane,
-                            this.matchDtos
-                                ?.find((match) => match.metadata.matchId === matchTimeline.metadata.matchId)
-                                ?.info.participants.find(
-                                    (matchParticipant) => matchParticipant.participantId === participant.participantId
-                                )?.role
+                                    (participant) => participant.participantId === participant.participantId
+                                )!
                         ),
                     };
                 }),
@@ -287,44 +286,49 @@ export default class ItemBuildsExtractor {
         }
     }
 
-    private printItems(championBuildInfos: Map<BuildKey, Build[]>) {
-        championBuildInfos.forEach((v, k) => {
-            console.log(this.lolClient.getChampion(k.championId)?.name + ' on ' + k.position + ' built: \n');
-            v.forEach((i) => i.itemIds.forEach((x) => console.log(this.getItemName(x!))));
-            console.log();
-        });
-    }
-
-    private getItemName(itemId: number) {
-        if (itemId == 0) {
-            return '';
-        }
-        return this.lolClient.getItem(itemId)?.name;
-    }
-
     private isTrinket(itemId: number) {
         return itemId in Trinket;
     }
 
-    private Position(lane?: string, role?: string) {
-        // console.log(lane + ' ' + role);
-        switch (lane) {
-            case 'TOP':
-                return Position.TOP;
-            case 'MIDDLE':
-                return Position.MID;
-            case 'JUNGLE':
-                return Position.JUNGLE;
-            case 'BOTTOM':
-                return role === 'CARRY' ? Position.BOT : Position.SUPPORT;
-            default:
-                return role === 'SUPPORT' ? Position.SUPPORT : undefined;
+    private calculatePosition(
+        frames: RiotAPITypes.MatchV5.FrameDTO[],
+        participant: RiotAPITypes.MatchV5.ParticipantDTO
+    ): Position {
+        if (participant.summoner1Id == SummonerSell.SMITE || participant.summoner2Id == SummonerSell.SMITE) {
+            return Position.JUNGLE;
         }
+
+        if (this.hasSupportItem(participant)) {
+            return Position.SUPPORT;
+        }
+
+        return Position.BOT;
     }
 
     private hasOrnnItem(itemId: number) {
         let potentialOrnnItem = this.lolClient.getItem(itemId)?.into[0];
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return this.lolClient.getItem(parseInt(potentialOrnnItem!))?.requiredAlly != undefined;
+    }
+
+    private hasSupportItem(participant: RiotAPITypes.MatchV5.ParticipantDTO) {
+        let items = this.createItemSet(participant);
+        return items.some((item) => this.isSupportItem(item));
+    }
+
+    private isSupportItem(item: number) {
+        return item in SupportItem;
+    }
+
+    private createItemSet(participant: RiotAPITypes.MatchV5.ParticipantDTO) {
+        let items = [];
+        items.push(participant.item0);
+        items.push(participant.item1);
+        items.push(participant.item2);
+        items.push(participant.item3);
+        items.push(participant.item4);
+        items.push(participant.item5);
+        items.push(participant.item6);
+        return items;
     }
 }

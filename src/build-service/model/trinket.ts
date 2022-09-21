@@ -3,4 +3,3 @@ export enum Trinket {
     ORACLE = 3364,
     STEALTH_WARD = 3340        
 }
-
