@@ -8,6 +8,9 @@ import { MatchTimeline } from '../model/match-timeline';
 import { Trinket } from '../model/trinket';
 import { SummonerSell } from '../model/summoner-spell';
 import { SupportItem } from '../model/support-items';
+import { writeFileSync } from 'fs';
+import { debug } from 'console';
+import { DebugStuff } from './debug-stuff';
 
 export default class ItemBuildsExtractor {
     private readonly lolClient = new LolClient();
@@ -128,7 +131,7 @@ export default class ItemBuildsExtractor {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (let matchId of this.matchIds!) {
             progBar.increment();
-            matchesTimeLine.push(await await this.lolClient.fetchMatchTimelineById(matchId));
+            matchesTimeLine.push(await this.lolClient.fetchMatchTimelineById(matchId));
         }
 
         console.log('\nDone!');
@@ -145,7 +148,7 @@ export default class ItemBuildsExtractor {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         for (let matchId of this.matchIds!) {
             progBar.increment();
-            matches.push(await await this.lolClient.fetchMatchById(matchId));
+            matches.push(await this.lolClient.fetchMatchById(matchId));
         }
         console.log('\nDone!');
 
@@ -172,13 +175,14 @@ export default class ItemBuildsExtractor {
                             this.matchDtos
                                 ?.find((match) => match.metadata.matchId === matchTimeline.metadata.matchId)
                                 ?.info.participants.find(
-                                    (participant) => participant.participantId === participant.participantId
+                                    (matchParticipant) => matchParticipant.participantId === participant.participantId
                                 )!
                         ),
                     };
                 }),
                 frames: matchTimeline.info.frames,
             });
+            console.log('--------------------------------');
         });
         return matchTimelines;
     }
@@ -301,6 +305,20 @@ export default class ItemBuildsExtractor {
         if (this.hasSupportItem(participant)) {
             return Position.SUPPORT;
         }
+
+        let averageXPos = 0;
+        let averageYPos = 0;
+
+        for (let frame of frames) {
+            let participantFrame = frame.participantFrames[participant.participantId];
+            averageXPos += participantFrame.position.x;
+            averageYPos += participantFrame.position.y;
+        }
+
+        averageXPos /= frames.length;
+        averageYPos /= frames.length;
+
+        console.log(averageXPos, averageYPos);
 
         return Position.BOT;
     }
