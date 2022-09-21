@@ -24,7 +24,7 @@ export default class ItemBuildsExtractor {
         this.matchDtos = await this.fetchChallengerMatches();
         this.matchTimelines = this.toMatchTimelines();
         let championBuildInfos = this.extractItemBuildsForAllMatches();
-        let mergedBuildInfos = this.mergeSubsetBuilds(championBuildInfos);
+        this.mergeSubsetBuilds(championBuildInfos);
         return championBuildInfos;
     }
 
@@ -49,15 +49,10 @@ export default class ItemBuildsExtractor {
                 }
             } while (current > builds.length);
         }
-
-        return championBuildInfos;
     }
-    isSubset(buildA: Build, buildB: Build) {
-        return (
-            buildB.itemIds.every(function (val) {
-                return buildA.itemIds.indexOf(val) >= 0;
-            }) && buildA.trinket === buildB.trinket
-        );
+
+    private isSubset(buildA: Build, buildB: Build) {
+        return buildB.itemIds.every((val) => buildA.itemIds.includes(val));
     }
 
     private extractItemBuildsForAllMatches() {
@@ -292,74 +287,11 @@ export default class ItemBuildsExtractor {
         }
     }
 
-    private printItems(itemBuilds: ItemBuild[], matches: RiotAPITypes.MatchV5.MatchDTO[]) {
-        itemBuilds.forEach((build) => {
-            // console.log('-------------');
-            // console.log(`Timeline: ${build.position}`);
-            // build.items.forEach((item) => console.log(this.getItemName(item)));
-            // console.log(this.getItemName(build.trinket));
-            // console.log('-------------');
-            // console.log('Match:');
-            for (let match of matches) {
-                if (match.metadata.matchId === build.matchId) {
-                    for (let participant of match.info.participants) {
-                        if (participant.participantId === build.participantId) {
-                            let matchBuild = new Set<number>();
-                            if (this.isCompletedItem(participant.item0)) {
-                                if (!this.isTrinket(participant.item0)) {
-                                    matchBuild.add(participant.item0);
-                                }
-                            }
-                            if (this.isCompletedItem(participant.item1)) {
-                                if (!this.isTrinket(participant.item1)) {
-                                    matchBuild.add(participant.item1);
-                                }
-                            }
-                            if (this.isCompletedItem(participant.item2)) {
-                                if (!this.isTrinket(participant.item2)) {
-                                    matchBuild.add(participant.item2);
-                                }
-                            }
-                            if (this.isCompletedItem(participant.item3)) {
-                                if (!this.isTrinket(participant.item3)) {
-                                    matchBuild.add(participant.item3);
-                                }
-                            }
-                            if (this.isCompletedItem(participant.item4)) {
-                                if (!this.isTrinket(participant.item4)) {
-                                    matchBuild.add(participant.item4);
-                                }
-                            }
-                            if (this.isCompletedItem(participant.item5)) {
-                                if (!this.isTrinket(participant.item5)) {
-                                    matchBuild.add(participant.item5);
-                                }
-                            }
-                            if (this.isCompletedItem(participant.item6)) {
-                                if (!this.isTrinket(participant.item6)) {
-                                    matchBuild.add(participant.item6);
-                                }
-                            }
-                            // matchBuild.forEach((i) => {
-                            //     build.items.includes(i)
-                            //         ? i
-                            //         : console.log(
-                            //               `Item ${this.getItemName(i)} in match but not in timeline for participant ${
-                            //                   build.participantId
-                            //               }`
-                            //           );
-                            // });
-                            // console.log(participant.item0 + ': ' + this.getItemName(participant.item0));
-                            // console.log(participant.item1 + ': ' + this.getItemName(participant.item1));
-                            // console.log(participant.item2 + ': ' + this.getItemName(participant.item2));
-                            // console.log(participant.item3 + ': ' + this.getItemName(participant.item3));
-                            // console.log(participant.item4 + ': ' + this.getItemName(participant.item4));
-                            // console.log(participant.item5 + ': ' + this.getItemName(participant.item5));
-                            // console.log(participant.item6 + ': ' + this.getItemName(participant.item6));
-                        }
-                    }
-                }
-            }
+    private printItems(championBuildInfos: Map<BuildKey, Build[]>) {
+        championBuildInfos.forEach((v, k) => {
+            console.log(this.lolClient.getChampion(k.championId)?.name + ' on ' + k.position + ' built: \n');
+            v.forEach((i) => i.itemIds.forEach((x) => console.log(this.getItemName(x!))));
+            console.log();
         });
     }
 
