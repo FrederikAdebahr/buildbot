@@ -45,7 +45,7 @@ export class Example {
         const buildInformation = await collections.builds?.findOne({ championId });
 
         if (!buildInformation) {
-            interaction.reply('Sorry, we don\'t seem to have any builds available for this champion');
+            interaction.reply('Sorry, we don\'t seem to have any builds available for this champion.');
             return;
         }
 
