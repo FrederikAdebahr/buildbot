@@ -1,4 +1,4 @@
-import { ChampionBuildInformation } from '../../common/models/champion-build-information';
+import { ChampionBuildInformation } from '../../common/model/champion-build-information';
 import LolClient from '../../common/client/lol-client';
 
 export async function createMessage(lolClient: LolClient, build: ChampionBuildInformation) {

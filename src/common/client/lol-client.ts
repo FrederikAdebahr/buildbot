@@ -8,12 +8,14 @@ export default class LolClient {
     private readonly CLUSTER = PlatformId.EUROPE;
     private readonly QUEUE = RiotAPITypes.QUEUE.RANKED_SOLO_5x5;
 
+    private static instance?: LolClient;
+    private static initSuccessful: boolean;
     private readonly rAPI: RiotAPI;
     private items?: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
     private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
     private championNamesFuse?: Fuse<RiotAPITypes.DDragon.DDragonChampionListDataDTO>;
 
-    constructor() {
+    private constructor() {
         if (!process.env.RIOT_TOKEN) {
             console.error('Please provide the RIOT_TOKEN environment variable');
             exit(1);
@@ -21,18 +23,27 @@ export default class LolClient {
         this.rAPI = new RiotAPI(process.env.RIOT_TOKEN);
     }
 
+    public static getInstance() {
+        if (!this.instance) {
+            this.instance = new LolClient();
+        }
+        return this.instance;
+    }
+
     public async init() {
         this.items = await this.rAPI.ddragon.items();
         this.champions = await this.rAPI.ddragon.champion.all();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
+        console.log('Successfully initialized League API client');
     }
 
-    public getItem(itemId?: number) {
-        if (!itemId) {
-            return undefined;
+    public getItem(itemId: number) {
+        const item = this.items?.data[itemId];
+        if (!item) {
+            throw new Error(`Item with id ${itemId} not found!`);
         }
-        return this.items?.data[itemId];
+        return item;
     }
 
     public searchChampion(championSearchString: string): number | undefined {

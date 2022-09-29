@@ -1,7 +1,7 @@
 import type { CommandInteraction } from 'discord.js';
 import { Discord, Slash, SlashOption } from 'discordx';
 import LolClient from '../../common/client/lol-client';
-import { Position } from '../../common/models/champion-build-information';
+import { Position } from '../../common/model/position';
 import { collections } from '../../common/services/database.service';
 import { createMessage } from '../tui/build-vizualiser';
 
@@ -10,8 +10,7 @@ export class Example {
     private lolClient: LolClient;
 
     constructor() {
-        this.lolClient = new LolClient();
-        this.lolClient.init();
+        this.lolClient = LolClient.getInstance();
     }
 
     @Slash()
@@ -45,7 +44,7 @@ export class Example {
         const buildInformation = await collections.builds?.findOne({ championId });
 
         if (!buildInformation) {
-            interaction.reply('Sorry, we don\'t seem to have any builds available for this champion.');
+            interaction.reply("Sorry, we don't seem to have any builds available for this champion.");
             return;
         }
 

@@ -1,6 +1,7 @@
-import * as mongoDB from 'mongodb';
+import chalk from 'chalk';
 import * as dotenv from 'dotenv';
-import { ChampionBuildInformation } from '../models/champion-build-information';
+import * as mongoDB from 'mongodb';
+import { ChampionBuildInformation } from '../model/champion-build-information';
 
 export const collections: { builds?: mongoDB.Collection<ChampionBuildInformation> } = {};
 
@@ -17,6 +18,8 @@ export async function connectToDatabase() {
     collections.builds = buildsCollection;
 
     console.log(
-        `Successfully connected to database: ${db.databaseName} and collection: ${buildsCollection.collectionName}`
+        `Successfully connected to database ${chalk.bold(db.databaseName)} and collection ${chalk.bold(
+            buildsCollection.collectionName
+        )}`
     );
 }

@@ -1,8 +1,15 @@
-import ItemBuildsExtractor from './core/item-builds-extractor';
+import LolClient from '../common/client/lol-client';
+import { collections, connectToDatabase } from '../common/services/database.service';
+import { getItemBuildsForRecentChallengerMatches } from './core/item-builds-extractor';
 
-async function updateItemBuilds() {
-    const itemBuildsExtractor = new ItemBuildsExtractor();
-    const itemBuilds = itemBuildsExtractor.getItemBuildsForAllMatches();
-}
+await LolClient.getInstance().init();
+await connectToDatabase();
 
-updateItemBuilds();
+const itemBuilds = await getItemBuildsForRecentChallengerMatches();
+
+console.log('Updating database...');
+await collections.builds?.deleteMany({});
+await collections.builds?.insertMany(itemBuilds);
+console.log('Done!');
+
+process.exit();

@@ -1,3 +1,3 @@
-export enum SummonerSell{
-    SMITE = 11
+export enum SummonerSpell {
+    SMITE = 11,
 }
