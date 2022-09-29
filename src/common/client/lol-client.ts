@@ -1,7 +1,8 @@
 import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
-import { exit } from 'process';
+import axios, { AxiosError } from 'axios';
 import 'dotenv/config';
 import Fuse from 'fuse.js';
+import { exit } from 'process';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
@@ -31,11 +32,28 @@ export default class LolClient {
     }
 
     public async init() {
+        await this.validateToken();
+
         this.items = await this.rAPI.ddragon.items();
         this.champions = await this.rAPI.ddragon.champion.all();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
         console.log('Successfully initialized League API client');
+    }
+
+    private async validateToken() {
+        try {
+            await axios.get('https://euw1.api.riotgames.com/lol/status/v4/platform-data', {
+                method: 'get',
+                headers: {
+                    'X-Riot-Token': this.rAPI.token,
+                },
+            });
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 403) {
+                throw new Error('Invalid Riot API token');
+            }
+        }
     }
 
     public getItem(itemId: number) {

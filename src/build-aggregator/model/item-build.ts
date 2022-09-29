@@ -1,5 +1,5 @@
-import { Position } from './position';
-import { Trinket } from './trinket';
+import { Position } from '../../common/model/position';
+import { Trinket } from '../../common/model/trinket';
 
 export interface ItemBuild {
     matchId: string;

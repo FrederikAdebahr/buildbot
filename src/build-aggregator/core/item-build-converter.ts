@@ -1,7 +1,7 @@
 import { it } from 'node:test';
 import { Build } from '../../common/model/build';
 import { ChampionBuildInformation } from '../../common/model/champion-build-information';
-import { ItemBuild } from '../../common/model/item-build';
+import { ItemBuild } from '../model/item-build';
 
 export const toBuild = (itemBuild: ItemBuild) => {
     return {

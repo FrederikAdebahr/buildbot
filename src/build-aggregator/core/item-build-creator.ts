@@ -1,7 +1,7 @@
 import { RiotAPITypes } from '@fightmegg/riot-api';
 import LolClient from '../../common/client/lol-client';
 import { EventType } from '../model/event-type';
-import { ItemBuild } from '../../common/model/item-build';
+import { ItemBuild } from '../model/item-build';
 import { MatchTimeline } from '../model/match-timeline';
 import { Trinket } from '../../common/model/trinket';
 
