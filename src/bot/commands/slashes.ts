@@ -1,6 +1,7 @@
 import type { CommandInteraction } from 'discord.js';
 import { Discord, Slash, SlashOption } from 'discordx';
 import LolClient from '../../common/client/lol-client';
+import { getTopThreeBuildsByPopularitySorted } from '../../common/core/build-util';
 import { Position } from '../../common/model/position';
 import { collections } from '../../common/services/database.service';
 import { createMessage } from '../tui/build-vizualiser';
@@ -21,11 +22,11 @@ export class Example {
     @Slash()
     async build(
         @SlashOption('champion_name', {}) championName: string,
-        @SlashOption('position', {}) position: string,
+        @SlashOption('position', {}) positionString: string,
         interaction: CommandInteraction
     ) {
-        const positionUp = position.toUpperCase();
-        if (!(positionUp in Position)) {
+        const position = positionString.toUpperCase() as Position;
+        if (!(position in Position)) {
             interaction.reply(
                 `Please specify a valid position. Valid positions are: ${Object.keys(Position)
                     .join(', ')
@@ -41,14 +42,19 @@ export class Example {
             return;
         }
 
-        const buildInformation = await collections.builds?.findOne({ championId });
+        const buildInformation = await collections.builds?.findOne({
+            championId,
+            position,
+        });
 
         if (!buildInformation) {
             interaction.reply("Sorry, we don't seem to have any builds available for this champion.");
             return;
         }
 
-        const msg = await createMessage(this.lolClient, buildInformation);
+        buildInformation.builds = getTopThreeBuildsByPopularitySorted(buildInformation.builds);
+
+        const msg = await createMessage(buildInformation);
         interaction.reply(msg);
     }
 }

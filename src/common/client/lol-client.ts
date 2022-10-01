@@ -3,6 +3,7 @@ import axios from 'axios';
 import 'dotenv/config';
 import Fuse from 'fuse.js';
 import { exit } from 'process';
+import { printError } from '../core/util';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
@@ -18,7 +19,7 @@ export default class LolClient {
 
     private constructor() {
         if (!process.env.RIOT_TOKEN) {
-            console.error('Please provide the RIOT_TOKEN environment variable');
+            printError('Please provide the RIOT_TOKEN environment variable');
             exit(1);
         }
         this.rAPI = new RiotAPI(process.env.RIOT_TOKEN);
@@ -38,7 +39,6 @@ export default class LolClient {
         this.champions = await this.rAPI.ddragon.champion.all();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
-        console.log('Successfully initialized League API client');
     }
 
     private async validateToken() {
@@ -51,7 +51,8 @@ export default class LolClient {
             });
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.status === 403) {
-                throw new Error('Invalid Riot API token');
+                printError('Invalid Riot API token');
+                exit(1);
             }
         }
     }
@@ -59,7 +60,7 @@ export default class LolClient {
     public getItem(itemId: number) {
         const item = this.items?.data[itemId];
         if (!item) {
-            throw new Error(`Item with id ${itemId} not found!`);
+            throw new Error(`Item with ID ${itemId} not found`);
         }
         return item;
     }
@@ -72,12 +73,15 @@ export default class LolClient {
         return parseInt(results[0].item.key);
     }
 
-    public getChampion(championId?: number) {
-        if (!championId) {
-            return undefined;
-        }
+    public getChampion(championId: number) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return Object.entries(this.champions!.data).find((entry) => entry[1].key === championId.toString())?.[1];
+        const champion = Object.entries(this.champions!.data).find(
+            (entry) => entry[1].key === championId.toString()
+        )?.[1];
+        if (!champion) {
+            throw new Error(`Champion with ID ${championId} not found`);
+        }
+        return champion;
     }
 
     public async fetchChallengerPlayers() {

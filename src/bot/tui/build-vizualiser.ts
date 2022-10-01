@@ -1,12 +1,19 @@
-import { ChampionBuildInformation } from '../../common/model/champion-build-information';
+import { bold } from 'discord.js';
 import LolClient from '../../common/client/lol-client';
+import { Build } from '../../common/model/build';
+import { ChampionBuildInformation } from '../../common/model/champion-build-information';
 
-export async function createMessage(lolClient: LolClient, build: ChampionBuildInformation) {
-    let championName = lolClient.getChampion(build.championId)?.name;
-    let itemNames = build.builds[0].itemIds.map((itemId) => lolClient.getItem(itemId)?.name);
+export async function createMessage(buildInformation: ChampionBuildInformation) {
+    let championName = LolClient.getInstance().getChampion(buildInformation.championId)?.name;
+    let buildStrings = buildInformation.builds.map(buildToString);
     return `
-Here is your build for ${championName} on ${build.position.toLowerCase()}:
+Here are the most popular builds for ${bold(championName)} on ${bold(buildInformation.position.toLowerCase())}:
 
-Items: ${itemNames.join(', ')}
-    `;
+${buildStrings.join('\n')}
+`;
 }
+
+const buildToString = (build: Build, index: number) => {
+    const itemNames = build.itemIds.map((itemId) => LolClient.getInstance().getItem(itemId)?.name);
+    return `Build ${index + 1}: ${itemNames.join(' \u279c ')}`;
+};

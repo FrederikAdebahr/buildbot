@@ -14,7 +14,7 @@ export const getItemBuildsForRecentChallengerMatches = async () => {
     const matchDtos = await fetchChallengerMatches(matchIds);
     const matchTimelines = toMatchTimelines(matchDtos, matchTimelineDtos);
     let championBuildInfos = extractItemBuildsForAllMatches(matchTimelines);
-    return withoutSubsetBuilds(championBuildInfos);
+    return filteredAndMergedBuilds(championBuildInfos);
 };
 
 const fetchChallengerMatchIds = async () => {
@@ -23,18 +23,21 @@ const fetchChallengerMatchIds = async () => {
 
     console.log('Fetching challenger players...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(challengerPlayers.entries.length, 0);
+    progBar.start(challengerPlayers.entries.length, 1);
 
+    let i = 0;
     for (let player of challengerPlayers.entries) {
         let matchHistory = await LolClient.getInstance().fetchMatchHistoryForPlayer(player);
         matchHistory.forEach(Set.prototype.add, matchIds);
         progBar.increment();
         // TODO: Remove this
-        break;
+        if (i > 9) {
+            break;
+        }
+        i++;
     }
 
     progBar.stop();
-    console.log('Done!');
     return matchIds;
 };
 
@@ -43,7 +46,7 @@ const fetchChallengerMatchTimelines = async (matchIds: Set<string>) => {
 
     console.log('Fetching match timelines...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchIds.size, 0);
+    progBar.start(matchIds.size, 1);
 
     for (let matchId of matchIds) {
         matchesTimeLine.push(await LolClient.getInstance().fetchMatchTimelineById(matchId));
@@ -51,7 +54,6 @@ const fetchChallengerMatchTimelines = async (matchIds: Set<string>) => {
     }
 
     progBar.stop();
-    console.log('Done!');
     return matchesTimeLine;
 };
 
@@ -60,7 +62,7 @@ const fetchChallengerMatches = async (matchIds: Set<string>) => {
 
     console.log('Fetching matches...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchIds.size, 0);
+    progBar.start(matchIds.size, 1);
 
     for (let matchId of matchIds) {
         matches.push(await LolClient.getInstance().fetchMatchById(matchId));
@@ -68,7 +70,6 @@ const fetchChallengerMatches = async (matchIds: Set<string>) => {
     }
 
     progBar.stop();
-    console.log('Done!');
     return matches;
 };
 
@@ -77,7 +78,7 @@ const extractItemBuildsForAllMatches = (matchTimelines: MatchTimeline[]) => {
 
     console.log('Extracting item builds...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchTimelines.length, 0);
+    progBar.start(matchTimelines.length, 1);
 
     for (let matchTimeline of matchTimelines) {
         let itemBuildsInMatch = generateItemBuildsFromMatch(matchTimeline);
@@ -99,39 +100,39 @@ const extractItemBuildsForAllMatches = (matchTimelines: MatchTimeline[]) => {
     }
 
     progBar.stop();
-    console.log('Done!');
     return championBuildInfos;
 };
 
-const withoutSubsetBuilds = (championBuildInfos: ChampionBuildInformation[]) => {
+const filteredAndMergedBuilds = (championBuildInfos: ChampionBuildInformation[]) => {
     const newBuildInfos: ChampionBuildInformation[] = [];
     championBuildInfos.forEach((buildInfo) => {
         const newBuildInfo: ChampionBuildInformation = {
             championId: buildInfo.championId,
             position: buildInfo.position,
-            builds: withoutDuplicates(subsetBuildFilter(buildInfo.builds)),
+            builds: mergedDuplicates(withoutSubsets(buildInfo.builds)),
         };
         newBuildInfos.push(newBuildInfo);
     });
     return newBuildInfos;
 };
 
-const subsetBuildFilter = (builds: Build[]) =>
+const withoutSubsets = (builds: Build[]) =>
     builds.filter((build1) => builds.every((build2) => !isSubsetOf(build1, build2) || hasSameItems(build1, build2)));
 
 const isSubsetOf = (buildA: Build, buildB: Build) => buildA.itemIds.every((val) => buildB.itemIds.includes(val));
 
-const buildEquals = (buildA: Build, buildB: Build) => hasSameItems(buildA, buildB) && buildA.trinket === buildB.trinket;
-
-const hasSameItems = (buildA: Build, buildB: Build) =>
-    isSubsetOf(buildA, buildB) && buildA.itemIds.length === buildB.itemIds.length;
-
-const withoutDuplicates = (builds: Build[]) => {
+const mergedDuplicates = (builds: Build[]) => {
     const newBuilds: Build[] = [];
     for (const build of builds) {
-        if (!newBuilds.some((addedBuild) => buildEquals(build, addedBuild))) {
+        const existingBuild = newBuilds.find((addedBuild) => hasSameItems(build, addedBuild));
+        if (!existingBuild) {
             newBuilds.push(build);
+        } else {
+            existingBuild.popularity++;
         }
     }
     return newBuilds;
 };
+
+const hasSameItems = (buildA: Build, buildB: Build) =>
+    isSubsetOf(buildA, buildB) && buildA.itemIds.length === buildB.itemIds.length;
