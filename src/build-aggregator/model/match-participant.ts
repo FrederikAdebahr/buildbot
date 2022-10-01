@@ -1,4 +1,4 @@
-import { Position } from "../../common/model/position";
+import { Position } from '../../common/model/position';
 
 export interface MatchParticipant {
     participantId: number;
