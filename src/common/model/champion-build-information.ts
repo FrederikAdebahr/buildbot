@@ -1,5 +1,5 @@
-import { Build } from "./build";
-import { Position } from "./position";
+import { Build } from './build';
+import { Position } from './position';
 
 export interface ChampionBuildInformation {
     championId: number;
