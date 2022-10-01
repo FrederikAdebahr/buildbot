@@ -1,5 +1,5 @@
 import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import 'dotenv/config';
 import Fuse from 'fuse.js';
 import { exit } from 'process';
