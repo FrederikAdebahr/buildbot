@@ -4,6 +4,7 @@ import { EventType } from '../model/event-type';
 import { ItemBuild } from '../model/item-build';
 import { MatchTimeline } from '../model/match-timeline';
 import { Trinket } from '../../common/model/trinket';
+import { SupportItem } from '../model/support-item';
 
 export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
     let itemBuildsInMatch: ItemBuild[] = matchTimeline.participants.map((participant) => ({
@@ -12,7 +13,7 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
         participantId: participant.participantId,
         championId: participant.championId,
         items: [],
-        trinket: undefined,
+        trinket: Trinket.NONE,
     }));
     for (let frame of matchTimeline.frames) {
         for (let event of frame.events) {
@@ -51,8 +52,11 @@ const addItemToBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventD
 
 const removeItemFromBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
     if (event.itemId) {
+        if (event.itemId in SupportItem) {
+            return;
+        }
         if (event.itemId in Trinket) {
-            itemBuild.trinket = undefined;
+            itemBuild.trinket = Trinket.NONE;
         } else if (isCompletedItem(event.itemId)) {
             itemBuild.items = itemBuild.items.filter((item) => {
                 return item !== event.itemId;
@@ -64,7 +68,7 @@ const removeItemFromBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.E
 const applyUndoToBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
     if (event.beforeId && isCompletedItem(event.beforeId)) {
         if (event.beforeId in Trinket) {
-            itemBuild.trinket = undefined;
+            itemBuild.trinket = Trinket.NONE;
         } else {
             itemBuild.items = itemBuild.items.filter((item) => {
                 return item !== event.beforeId;

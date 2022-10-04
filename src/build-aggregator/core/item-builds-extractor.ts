@@ -38,6 +38,8 @@ const fetchChallengerMatchIds = async () => {
     }
 
     progBar.stop();
+    matchIds.clear();
+    matchIds.add('EUW1_6090598185');
     return matchIds;
 };
 
