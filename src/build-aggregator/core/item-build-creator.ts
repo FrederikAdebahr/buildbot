@@ -1,10 +1,10 @@
-import { RiotAPITypes } from '@fightmegg/riot-api';
+import {RiotAPITypes} from '@fightmegg/riot-api';
 import LolClient from '../../common/client/lol-client';
-import { EventType } from '../model/event-type';
-import { ItemBuild } from '../model/item-build';
-import { MatchTimeline } from '../model/match-timeline';
-import { Trinket } from '../../common/model/trinket';
-import { SupportItem } from '../model/support-item';
+import {EventType} from '../model/event-type';
+import {ItemBuild} from '../model/item-build';
+import {MatchTimeline} from '../model/match-timeline';
+import {Trinket} from '../../common/model/trinket';
+import {JungleItem} from '../model/jungle-items';
 
 export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
     let itemBuildsInMatch: ItemBuild[] = matchTimeline.participants.map((participant) => ({
@@ -28,8 +28,10 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
                     addItemToBuild(eventParticipantItemBuild, event);
                     break;
                 case EventType.ITEM_SOLD:
+                    removeSoldItemFromBuild(eventParticipantItemBuild, event);
+                    break;
                 case EventType.ITEM_DESTROYED:
-                    removeItemFromBuild(eventParticipantItemBuild, event);
+                    removeDestroyedItemFromBuild(eventParticipantItemBuild, event);
                     break;
                 case EventType.ITEM_UNDO:
                     applyUndoToBuild(eventParticipantItemBuild, event);
@@ -50,18 +52,20 @@ const addItemToBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventD
     }
 };
 
-const removeItemFromBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
+const removeSoldItemFromBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
+    itemBuild.items = itemBuild.items.filter((item) => {
+        return item !== event.itemId;
+    });
+};
+
+const removeDestroyedItemFromBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
     if (event.itemId) {
-        if (event.itemId in SupportItem) {
+        if (!(event.itemId in JungleItem)) {
             return;
         }
-        if (event.itemId in Trinket) {
-            itemBuild.trinket = Trinket.NONE;
-        } else if (isCompletedItem(event.itemId)) {
-            itemBuild.items = itemBuild.items.filter((item) => {
-                return item !== event.itemId;
-            });
-        }
+        itemBuild.items = itemBuild.items.filter((item) => {
+            return item !== event.itemId;
+        });
     }
 };
 
