@@ -1,17 +1,17 @@
-import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
+import {PlatformId, RiotAPI, RiotAPITypes} from '@fightmegg/riot-api';
 import axios from 'axios';
 import 'dotenv/config';
 import Fuse from 'fuse.js';
-import { exit } from 'process';
-import { printError } from '../core/util';
+import {exit} from 'process';
+import {printError} from '../core/util';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
     private readonly CLUSTER = PlatformId.EUROPE;
     private readonly QUEUE = RiotAPITypes.QUEUE.RANKED_SOLO_5x5;
+    private readonly QUEUE_ID = 420;
 
     private static instance?: LolClient;
-    private static initSuccessful: boolean;
     private readonly rAPI: RiotAPI;
     private items?: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
     private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
@@ -38,7 +38,7 @@ export default class LolClient {
         this.items = await this.rAPI.ddragon.items();
         this.champions = await this.rAPI.ddragon.champion.all();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
+        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), {keys: ['name']});
     }
 
     private async validateToken() {
@@ -99,6 +99,9 @@ export default class LolClient {
         return await this.rAPI.matchV5.getIdsbyPuuid({
             cluster: this.CLUSTER,
             puuid: summoner.puuid,
+            params: {
+                queue: this.QUEUE_ID
+            }
         });
     }
 

@@ -51,7 +51,7 @@ const findMatchTimelineDtoFromMatchDto = (
     matchTimelineDtos: RiotAPITypes.MatchV5.MatchTimelineDTO[]
 ) => {
     const matchTimelineDto = matchTimelineDtos.find(
-        (matchTimelineDto) => matchTimelineDto.metadata.matchId === matchTimelineDto.metadata.matchId
+        (matchTimelineDto) => matchDto.metadata.matchId === matchTimelineDto.metadata.matchId
     );
     if (!matchTimelineDto) {
         throw new Error(`No MatchDTO found for MatchTimelineDTO with ID ${matchDto.metadata.matchId}`);

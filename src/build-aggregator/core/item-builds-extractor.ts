@@ -1,12 +1,12 @@
-import { RiotAPITypes } from '@fightmegg/riot-api';
-import { Presets, SingleBar } from 'cli-progress';
+import {RiotAPITypes} from '@fightmegg/riot-api';
+import {Presets, SingleBar} from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
-import { Build } from '../../common/model/build';
-import { ChampionBuildInformation } from '../../common/model/champion-build-information';
-import { MatchTimeline } from '../model/match-timeline';
-import { toBuild, toChampionBuildInfo } from './item-build-converter';
-import { generateItemBuildsFromMatch } from './item-build-creator';
-import { toMatchTimelines } from './match-timeline-converter';
+import {Build} from '../../common/model/build';
+import {ChampionBuildInformation} from '../../common/model/champion-build-information';
+import {MatchTimeline} from '../model/match-timeline';
+import {toBuild, toChampionBuildInfo} from './item-build-converter';
+import {generateItemBuildsFromMatch} from './item-build-creator';
+import {toMatchTimelines} from './match-timeline-converter';
 
 export const getItemBuildsForRecentChallengerMatches = async () => {
     const matchIds = await fetchChallengerMatchIds();
@@ -25,16 +25,12 @@ const fetchChallengerMatchIds = async () => {
     const progBar = new SingleBar({}, Presets.shades_classic);
     progBar.start(challengerPlayers.entries.length, 1);
 
-    let i = 0;
     for (let player of challengerPlayers.entries) {
         let matchHistory = await LolClient.getInstance().fetchMatchHistoryForPlayer(player);
         matchHistory.forEach(Set.prototype.add, matchIds);
         progBar.increment();
         // TODO: Remove this
-        if (i > 9) {
-            break;
-        }
-        i++;
+        break;
     }
 
     progBar.stop();
@@ -68,7 +64,6 @@ const fetchChallengerMatches = async (matchIds: Set<string>) => {
         matches.push(await LolClient.getInstance().fetchMatchById(matchId));
         progBar.increment();
     }
-
     progBar.stop();
     return matches;
 };
