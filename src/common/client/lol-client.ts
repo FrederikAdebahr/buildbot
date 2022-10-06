@@ -4,6 +4,7 @@ import 'dotenv/config';
 import Fuse from 'fuse.js';
 import {exit} from 'process';
 import {printError} from '../core/util';
+import { CONSOLE_PADDING } from '../core/globals';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
@@ -33,12 +34,13 @@ export default class LolClient {
     }
 
     public async init() {
+        process.stdout.write('Initializing Riot API client...'.padEnd(CONSOLE_PADDING));
         await this.validateToken();
-
         this.items = await this.rAPI.ddragon.items();
         this.champions = await this.rAPI.ddragon.champion.all();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.championNamesFuse = new Fuse(Object.values(this.champions!.data), {keys: ['name']});
+        console.log('success');
     }
 
     private async validateToken() {
