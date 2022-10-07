@@ -1,12 +1,13 @@
-import {RiotAPITypes} from '@fightmegg/riot-api';
-import {Presets, SingleBar} from 'cli-progress';
+import { RiotAPITypes } from '@fightmegg/riot-api';
+import { Presets, SingleBar } from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
-import {Build} from '../../common/model/build';
-import {ChampionBuildInformation} from '../../common/model/champion-build-information';
-import {MatchTimeline} from '../model/match-timeline';
-import {toBuild, toChampionBuildInfo} from './item-build-converter';
-import {generateItemBuildsFromMatch} from './item-build-creator';
-import {toMatchTimelines} from './match-timeline-converter';
+import { Build } from '../../common/model/build';
+import { ChampionBuildInformation } from '../../common/model/champion-build-information';
+import { MatchTimeline } from '../model/match-timeline';
+import { toBuild, toChampionBuildInfo } from './item-build-converter';
+import { generateItemBuildsFromMatch } from './item-build-creator';
+import { toMatchTimelines } from './match-timeline-converter';
+import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 
 export const getItemBuildsForRecentChallengerMatches = async () => {
     const matchIds = await fetchChallengerMatchIds();
@@ -23,14 +24,18 @@ const fetchChallengerMatchIds = async () => {
 
     console.log('Fetching challenger players...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(challengerPlayers.entries.length, 1);
+    progBar.start(challengerPlayers.entries.length, 0);
 
+    let i = 0;
     for (let player of challengerPlayers.entries) {
+        // TODO: Remove this
+        if (i >= 3) {
+            break;
+        }
+        progBar.increment();
         let matchHistory = await LolClient.getInstance().fetchMatchHistoryForPlayer(player);
         matchHistory.forEach(Set.prototype.add, matchIds);
-        progBar.increment();
-        // TODO: Remove this
-        break;
+        i++;
     }
 
     progBar.stop();
@@ -42,11 +47,11 @@ const fetchChallengerMatchTimelines = async (matchIds: Set<string>) => {
 
     console.log('Fetching match timelines...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchIds.size, 1);
+    progBar.start(matchIds.size, 0);
 
     for (let matchId of matchIds) {
-        matchesTimeLine.push(await LolClient.getInstance().fetchMatchTimelineById(matchId));
         progBar.increment();
+        matchesTimeLine.push(await LolClient.getInstance().fetchMatchTimelineById(matchId));
     }
 
     progBar.stop();
@@ -58,11 +63,11 @@ const fetchChallengerMatches = async (matchIds: Set<string>) => {
 
     console.log('Fetching matches...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchIds.size, 1);
+    progBar.start(matchIds.size, 0);
 
     for (let matchId of matchIds) {
-        matches.push(await LolClient.getInstance().fetchMatchById(matchId));
         progBar.increment();
+        matches.push(await LolClient.getInstance().fetchMatchById(matchId));
     }
     progBar.stop();
     return matches;
@@ -73,9 +78,10 @@ const extractItemBuildsForAllMatches = (matchTimelines: MatchTimeline[]) => {
 
     console.log('Extracting item builds...');
     const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchTimelines.length, 1);
+    progBar.start(matchTimelines.length, 0);
 
     for (let matchTimeline of matchTimelines) {
+        progBar.increment();
         let itemBuildsInMatch = generateItemBuildsFromMatch(matchTimeline);
         for (let itemBuild of itemBuildsInMatch) {
             if (!itemBuild.items.length) {
@@ -83,7 +89,7 @@ const extractItemBuildsForAllMatches = (matchTimelines: MatchTimeline[]) => {
             }
             const existingBuildInfo = championBuildInfos.find(
                 (buildInfo) =>
-                    buildInfo.championId === itemBuild.championId && buildInfo.position === itemBuild.position
+                    buildInfo.championId === itemBuild.championId && buildInfo.position === itemBuild.position,
             );
             if (existingBuildInfo) {
                 existingBuildInfo.builds.push(toBuild(itemBuild));
@@ -91,7 +97,6 @@ const extractItemBuildsForAllMatches = (matchTimelines: MatchTimeline[]) => {
                 championBuildInfos.push(toChampionBuildInfo(itemBuild));
             }
         }
-        progBar.increment();
     }
 
     progBar.stop();
@@ -104,7 +109,7 @@ const filteredAndMergedBuilds = (championBuildInfos: ChampionBuildInformation[])
         const newBuildInfo: ChampionBuildInformation = {
             championId: buildInfo.championId,
             position: buildInfo.position,
-            builds: mergedDuplicates(withoutSubsets(buildInfo.builds)),
+            builds: mergedBuildDuplicates(withoutSubsets(buildInfo.builds)),
         };
         newBuildInfos.push(newBuildInfo);
     });
@@ -114,20 +119,35 @@ const filteredAndMergedBuilds = (championBuildInfos: ChampionBuildInformation[])
 const withoutSubsets = (builds: Build[]) =>
     builds.filter((build1) => builds.every((build2) => !isSubsetOf(build1, build2) || hasSameItems(build1, build2)));
 
+const hasSameItems = (buildA: Build, buildB: Build) =>
+    isSubsetOf(buildA, buildB) && buildA.itemIds.length === buildB.itemIds.length;
+
 const isSubsetOf = (buildA: Build, buildB: Build) => buildA.itemIds.every((val) => buildB.itemIds.includes(val));
 
-const mergedDuplicates = (builds: Build[]) => {
+const mergedBuildDuplicates = (builds: Build[]) => {
     const newBuilds: Build[] = [];
     for (const build of builds) {
         const existingBuild = newBuilds.find((addedBuild) => hasSameItems(build, addedBuild));
         if (!existingBuild) {
             newBuilds.push(build);
         } else {
+            build.summonerSpellSets.forEach((summonerSpellSet) => {
+                const existingSummonerSpellSet = existingBuild.summonerSpellSets.find(
+                    (addedSummonerSpellSet) => hasSameSummonerSpells(addedSummonerSpellSet, summonerSpellSet));
+                if (!existingSummonerSpellSet) {
+                    existingBuild.summonerSpellSets.push(summonerSpellSet);
+                } else {
+                    existingSummonerSpellSet.popularity++;
+                }
+            });
             existingBuild.popularity++;
         }
     }
     return newBuilds;
 };
 
-const hasSameItems = (buildA: Build, buildB: Build) =>
-    isSubsetOf(buildA, buildB) && buildA.itemIds.length === buildB.itemIds.length;
+const hasSameSummonerSpells = (summonerSpellSetA: SummonerSpellSet, summonerSpellSetB: SummonerSpellSet) =>
+    (summonerSpellSetA.summonerSpell1 === summonerSpellSetB.summonerSpell1
+        || summonerSpellSetA.summonerSpell1 === summonerSpellSetB.summonerSpell2)
+    && (summonerSpellSetA.summonerSpell2 === summonerSpellSetB.summonerSpell1
+        || summonerSpellSetA.summonerSpell2 === summonerSpellSetB.summonerSpell2);

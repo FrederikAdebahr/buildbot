@@ -1,10 +1,9 @@
 import type { CommandInteraction } from 'discord.js';
 import { Discord, Slash, SlashOption } from 'discordx';
 import LolClient from '../../common/client/lol-client';
-import { getTopThreeBuildsByPopularitySorted } from '../../common/core/build-util';
 import { Position } from '../../common/model/position';
 import { collections } from '../../common/services/database.service';
-import { createMessage } from '../tui/build-vizualiser';
+import { createBuildMessage } from '../tui/build-vizualiser';
 
 @Discord()
 export class Example {
@@ -23,14 +22,14 @@ export class Example {
     async build(
         @SlashOption('champion_name', {}) championName: string,
         @SlashOption('position', {}) positionString: string,
-        interaction: CommandInteraction
+        interaction: CommandInteraction,
     ) {
         const position = positionString.toUpperCase() as Position;
         if (!(position in Position)) {
-            interaction.reply(
+            await interaction.reply(
                 `Please specify a valid position. Valid positions are: ${Object.keys(Position)
                     .join(', ')
-                    .toLowerCase()}`
+                    .toLowerCase()}`,
             );
             return;
         }
@@ -38,7 +37,7 @@ export class Example {
         const championId = this.lolClient.searchChampion(championName);
 
         if (!championId) {
-            interaction.reply('Sorry, I could not find a champion with this name.');
+            await interaction.reply('Sorry, I could not find a champion with this name.');
             return;
         }
 
@@ -48,13 +47,11 @@ export class Example {
         });
 
         if (!buildInformation) {
-            interaction.reply("Sorry, we don't seem to have any builds available for this champion.");
+            await interaction.reply('Sorry, we don\'t seem to have any builds available for this champion.');
             return;
         }
 
-        buildInformation.builds = getTopThreeBuildsByPopularitySorted(buildInformation.builds);
-
-        const msg = await createMessage(buildInformation);
-        interaction.reply(msg);
+        const msg = await createBuildMessage(buildInformation);
+        await interaction.reply(msg);
     }
 }

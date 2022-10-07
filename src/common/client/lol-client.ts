@@ -1,8 +1,8 @@
-import {PlatformId, RiotAPI, RiotAPITypes} from '@fightmegg/riot-api';
+import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import axios from 'axios';
 import Fuse from 'fuse.js';
-import {exit} from 'process';
-import {printError} from '../core/util';
+import { exit } from 'process';
+import { printError } from '../core/util';
 import { CONSOLE_PADDING } from '../core/globals';
 
 export default class LolClient {
@@ -15,6 +15,7 @@ export default class LolClient {
     private readonly rAPI: RiotAPI;
     private items?: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
     private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
+    private summonerSpells?: RiotAPITypes.DDragon.DDragonSummonerSpellDTO;
     private championNamesFuse?: Fuse<RiotAPITypes.DDragon.DDragonChampionListDataDTO>;
 
     private constructor() {
@@ -37,8 +38,9 @@ export default class LolClient {
         await this.validateToken();
         this.items = await this.rAPI.ddragon.items();
         this.champions = await this.rAPI.ddragon.champion.all();
+        this.summonerSpells = await this.rAPI.ddragon.summonerSpells();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), {keys: ['name']});
+        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
         console.log('success');
     }
 
@@ -77,12 +79,23 @@ export default class LolClient {
     public getChampion(championId: number) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const champion = Object.entries(this.champions!.data).find(
-            (entry) => entry[1].key === championId.toString()
+            (entry) => entry[1].key === championId.toString(),
         )?.[1];
         if (!champion) {
             throw new Error(`Champion with ID ${championId} not found`);
         }
         return champion;
+    }
+
+    public getSummonerSpell(summonerSpellId: number) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const summonerSpell = Object.entries(this.summonerSpells!.data).find(
+            (entry) => entry[1].key === summonerSpellId.toString(),
+        )?.[1];
+        if (!summonerSpell) {
+            throw new Error(`Summoner spell with ID ${summonerSpellId} not found`);
+        }
+        return summonerSpell;
     }
 
     public async fetchChallengerPlayers() {
@@ -101,8 +114,8 @@ export default class LolClient {
             cluster: this.CLUSTER,
             puuid: summoner.puuid,
             params: {
-                queue: this.QUEUE_ID
-            }
+                queue: this.QUEUE_ID,
+            },
         });
     }
 

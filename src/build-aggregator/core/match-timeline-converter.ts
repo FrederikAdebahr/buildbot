@@ -5,7 +5,7 @@ import { calculatePosition } from './position-determiner';
 
 export const toMatchTimelines = (
     matchDtos: RiotAPITypes.MatchV5.MatchDTO[],
-    matchTimelineDtos: RiotAPITypes.MatchV5.MatchTimelineDTO[]
+    matchTimelineDtos: RiotAPITypes.MatchV5.MatchTimelineDTO[],
 ) => {
     let matchTimelines: MatchTimeline[] = [];
     matchDtos.forEach((matchDto) => {
@@ -21,19 +21,19 @@ export const toMatchTimelines = (
 
 const toMatchParticipants = (
     matchDto: RiotAPITypes.MatchV5.MatchDTO,
-    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO
+    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO,
 ) =>
     matchDto.info.participants.map((participantDto) =>
-        toMatchParticipant(participantDto.participantId, matchDto, matchTimelineDto)
+        toMatchParticipant(participantDto.participantId, matchDto, matchTimelineDto),
     );
 
-const toMatchParticipant = (
+function toMatchParticipant(
     participantId: number,
     matchDto: RiotAPITypes.MatchV5.MatchDTO,
-    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO
-) => {
+    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO,
+): MatchParticipant {
     const matchParticipantDto = matchDto.info.participants.find(
-        (participant) => participant.participantId === participantId
+        (participant) => participant.participantId === participantId,
     );
     if (!matchParticipantDto) {
         throw new Error(`No participant with ID ${participantId} found in ParticipantDTOs`);
@@ -43,15 +43,17 @@ const toMatchParticipant = (
         participantId,
         championId: matchParticipantDto.championId,
         position: calculatePosition(matchTimelineDto.info.frames, matchParticipantDto),
-    } as MatchParticipant;
-};
+        summonerSpell1: matchParticipantDto.summoner1Id,
+        summonerSpell2: matchParticipantDto.summoner2Id,
+    };
+}
 
 const findMatchTimelineDtoFromMatchDto = (
     matchDto: RiotAPITypes.MatchV5.MatchDTO,
-    matchTimelineDtos: RiotAPITypes.MatchV5.MatchTimelineDTO[]
+    matchTimelineDtos: RiotAPITypes.MatchV5.MatchTimelineDTO[],
 ) => {
     const matchTimelineDto = matchTimelineDtos.find(
-        (matchTimelineDto) => matchDto.metadata.matchId === matchTimelineDto.metadata.matchId
+        (matchTimelineDto) => matchDto.metadata.matchId === matchTimelineDto.metadata.matchId,
     );
     if (!matchTimelineDto) {
         throw new Error(`No MatchDTO found for MatchTimelineDTO with ID ${matchDto.metadata.matchId}`);
