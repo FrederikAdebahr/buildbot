@@ -1,10 +1,10 @@
-import {RiotAPITypes} from '@fightmegg/riot-api';
+import { RiotAPITypes } from '@fightmegg/riot-api';
 import LolClient from '../../common/client/lol-client';
-import {EventType} from '../model/event-type';
-import {ItemBuild} from '../model/item-build';
-import {MatchTimeline} from '../model/match-timeline';
-import {Trinket} from '../../common/model/trinket';
-import {JungleItem} from '../model/jungle-items';
+import { EventType } from '../model/event-type';
+import { ItemBuild } from '../model/item-build';
+import { MatchTimeline } from '../model/match-timeline';
+import { Trinket } from '../model/trinket';
+import { JungleItem } from '../model/jungle-items';
 
 export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
     let itemBuildsInMatch: ItemBuild[] = matchTimeline.participants.map((participant) => ({
@@ -12,13 +12,15 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
         position: participant.position,
         participantId: participant.participantId,
         championId: participant.championId,
+        summonerSpell1: participant.summonerSpell1,
+        summonerSpell2: participant.summonerSpell2,
         items: [],
         trinket: Trinket.NONE,
     }));
     for (let frame of matchTimeline.frames) {
         for (let event of frame.events) {
             let eventParticipantItemBuild = itemBuildsInMatch.find(
-                (build) => build.participantId === event.participantId
+                (build) => build.participantId === event.participantId,
             );
             if (!eventParticipantItemBuild) {
                 continue;

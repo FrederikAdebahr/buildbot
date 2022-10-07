@@ -1,11 +1,13 @@
 import { Position } from '../../common/model/position';
-import { Trinket } from '../../common/model/trinket';
+import { Trinket } from './trinket';
 
 export interface ItemBuild {
     matchId: string;
-    position: Position | undefined;
+    position: Position;
     participantId: number;
     championId: number;
+    summonerSpell1: number;
+    summonerSpell2: number;
     items: number[];
-    trinket: Trinket | undefined;
+    trinket: Trinket;
 }
