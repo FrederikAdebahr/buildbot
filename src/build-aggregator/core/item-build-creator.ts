@@ -16,6 +16,7 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
         summonerSpell1: participant.summonerSpell1,
         summonerSpell2: participant.summonerSpell2,
         items: [],
+        skillLevelUps: [],
         trinket: participant.championId == Champion.FIDDLESTICKS ? Trinket.SCARECROW_EFFIGY : Trinket.NO_TRINKET,
     }));
     for (let frame of matchTimeline.frames) {
@@ -39,10 +40,18 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
                 case EventType.ITEM_UNDO:
                     applyUndoToBuild(eventParticipantItemBuild, event);
                     break;
+                case EventType.SKILL_LEVEL_UP:
+                    addSkillLevelUpToBuild(eventParticipantItemBuild, event);
+                    break;
             }
         }
     }
     return itemBuildsInMatch;
+};
+
+const addSkillLevelUpToBuild = (eventParticipantItemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
+    eventParticipantItemBuild.skillLevelUps.push(event.skillSlot!);
+    return;
 };
 
 const addItemToBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {

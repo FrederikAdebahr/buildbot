@@ -3,4 +3,5 @@ export enum EventType {
     ITEM_SOLD = 'ITEM_SOLD',
     ITEM_UNDO = 'ITEM_UNDO',
     ITEM_DESTROYED = 'ITEM_DESTROYED',
+    SKILL_LEVEL_UP = 'SKILL_LEVEL_UP',
 }

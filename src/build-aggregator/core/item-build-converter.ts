@@ -15,6 +15,7 @@ export function toChampionBuildInfo(itemBuild: ItemBuild): ChampionBuildInformat
 export function toBuild(itemBuild: ItemBuild): Build {
     return {
         itemIds: itemBuild.items,
+        skillLevelUps: itemBuild.skillLevelUps,
         trinket: itemBuild.trinket === Trinket.NO_TRINKET ? Trinket.STEALTH_WARD : itemBuild.trinket,
         popularity: 0,
         summonerSpellSets: [toSummonerSpellSet(itemBuild)],
