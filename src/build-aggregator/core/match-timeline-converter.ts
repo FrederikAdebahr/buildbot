@@ -41,6 +41,7 @@ function toMatchParticipant(
 
     return {
         participantId,
+        perks: matchParticipantDto.perks,
         championId: matchParticipantDto.championId,
         position: calculatePosition(matchTimelineDto.info.frames, matchParticipantDto),
         summonerSpell1: matchParticipantDto.summoner1Id,

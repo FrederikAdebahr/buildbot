@@ -9,6 +9,7 @@ export interface ItemBuild {
     summonerSpell1: number;
     summonerSpell2: number;
     skillLevelUps: number[];
+    runes: Runes;
     items: number[];
     trinket: Trinket;
 }

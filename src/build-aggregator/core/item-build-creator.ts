@@ -6,6 +6,8 @@ import {MatchTimeline} from '../model/match-timeline';
 import {Trinket} from '../model/trinket';
 import {JungleItem} from '../model/jungle-items';
 import {Champion} from '../model/champion';
+import {Runes} from '../model/runes';
+
 
 export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
     let itemBuildsInMatch: ItemBuild[] = matchTimeline.participants.map((participant) => ({
@@ -16,6 +18,7 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
         summonerSpell1: participant.summonerSpell1,
         summonerSpell2: participant.summonerSpell2,
         items: [],
+        runes: initializeRunes(participant.perks),
         skillLevelUps: [],
         trinket: participant.championId == Champion.FIDDLESTICKS ? Trinket.SCARECROW_EFFIGY : Trinket.NO_TRINKET,
     }));
@@ -47,6 +50,22 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
         }
     }
     return itemBuildsInMatch;
+};
+
+const initializeRunes = (perks: RiotAPITypes.MatchV5.PerksDTO): Runes => {
+    const primaryTreeSelections = perks.styles[0].selections;
+    const secondaryTreeSelections = perks.styles[1].selections;
+    return {
+        primaryTree: {
+            id: perks.styles[0].style,
+            perks: [primaryTreeSelections[0].perk, primaryTreeSelections[1].perk, primaryTreeSelections[2].perk, primaryTreeSelections[3].perk],
+        },
+        secondaryTree: {
+            id: perks.styles[0].style,
+            perks: [secondaryTreeSelections[0].perk, secondaryTreeSelections[1].perk],
+        },
+        stats: perks.statPerks
+    };
 };
 
 const addSkillLevelUpToBuild = (eventParticipantItemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
