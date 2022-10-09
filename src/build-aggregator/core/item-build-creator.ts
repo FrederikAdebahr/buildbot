@@ -1,10 +1,11 @@
-import { RiotAPITypes } from '@fightmegg/riot-api';
+import {RiotAPITypes} from '@fightmegg/riot-api';
 import LolClient from '../../common/client/lol-client';
-import { EventType } from '../model/event-type';
-import { ItemBuild } from '../model/item-build';
-import { MatchTimeline } from '../model/match-timeline';
-import { Trinket } from '../model/trinket';
-import { JungleItem } from '../model/jungle-items';
+import {EventType} from '../model/event-type';
+import {ItemBuild} from '../model/item-build';
+import {MatchTimeline} from '../model/match-timeline';
+import {Trinket} from '../model/trinket';
+import {JungleItem} from '../model/jungle-items';
+import {Champion} from '../model/champion';
 
 export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
     let itemBuildsInMatch: ItemBuild[] = matchTimeline.participants.map((participant) => ({
@@ -15,7 +16,7 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
         summonerSpell1: participant.summonerSpell1,
         summonerSpell2: participant.summonerSpell2,
         items: [],
-        trinket: Trinket.NONE,
+        trinket: participant.championId == Champion.FIDDLESTICKS ? Trinket.SCARECROW_EFFIGY : Trinket.NO_TRINKET,
     }));
     for (let frame of matchTimeline.frames) {
         for (let event of frame.events) {
@@ -74,7 +75,7 @@ const removeDestroyedItemFromBuild = (itemBuild: ItemBuild, event: RiotAPITypes.
 const applyUndoToBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
     if (event.beforeId && isCompletedItem(event.beforeId)) {
         if (event.beforeId in Trinket) {
-            itemBuild.trinket = Trinket.NONE;
+            itemBuild.trinket = Trinket.NO_TRINKET;
         } else {
             itemBuild.items = itemBuild.items.filter((item) => {
                 return item !== event.beforeId;

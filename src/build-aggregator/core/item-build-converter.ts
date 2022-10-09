@@ -1,7 +1,8 @@
-import { Build } from '../../common/model/build';
-import { ChampionBuildInformation } from '../../common/model/champion-build-information';
-import { ItemBuild } from '../model/item-build';
-import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
+import {Build} from '../../common/model/build';
+import {ChampionBuildInformation} from '../../common/model/champion-build-information';
+import {ItemBuild} from '../model/item-build';
+import {SummonerSpellSet} from '../../common/model/summoner-spell-set';
+import {Trinket} from '../model/trinket';
 
 export function toChampionBuildInfo(itemBuild: ItemBuild): ChampionBuildInformation {
     return {
@@ -14,7 +15,7 @@ export function toChampionBuildInfo(itemBuild: ItemBuild): ChampionBuildInformat
 export function toBuild(itemBuild: ItemBuild): Build {
     return {
         itemIds: itemBuild.items,
-        trinket: itemBuild.trinket,
+        trinket: itemBuild.trinket === Trinket.NO_TRINKET ? Trinket.STEALTH_WARD : itemBuild.trinket,
         popularity: 0,
         summonerSpellSets: [toSummonerSpellSet(itemBuild)],
     };

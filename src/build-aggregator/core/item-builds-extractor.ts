@@ -1,13 +1,13 @@
-import { RiotAPITypes } from '@fightmegg/riot-api';
-import { Presets, SingleBar } from 'cli-progress';
+import {RiotAPITypes} from '@fightmegg/riot-api';
+import {Presets, SingleBar} from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
-import { Build } from '../../common/model/build';
-import { ChampionBuildInformation } from '../../common/model/champion-build-information';
-import { MatchTimeline } from '../model/match-timeline';
-import { toBuild, toChampionBuildInfo } from './item-build-converter';
-import { generateItemBuildsFromMatch } from './item-build-creator';
-import { toMatchTimelines } from './match-timeline-converter';
-import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
+import {Build} from '../../common/model/build';
+import {ChampionBuildInformation} from '../../common/model/champion-build-information';
+import {MatchTimeline} from '../model/match-timeline';
+import {toBuild, toChampionBuildInfo} from './item-build-converter';
+import {generateItemBuildsFromMatch} from './item-build-creator';
+import {toMatchTimelines} from './match-timeline-converter';
+import {SummonerSpellSet} from '../../common/model/summoner-spell-set';
 
 export const getItemBuildsForRecentChallengerMatches = async () => {
     const matchIds = await fetchChallengerMatchIds();
