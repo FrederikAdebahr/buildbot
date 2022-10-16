@@ -1,9 +1,9 @@
-import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
+import {PlatformId, RiotAPI, RiotAPITypes} from '@fightmegg/riot-api';
 import axios from 'axios';
 import Fuse from 'fuse.js';
-import { exit } from 'process';
-import { printError } from '../core/util';
-import { CONSOLE_PADDING } from '../core/globals';
+import {exit} from 'process';
+import {printError} from '../core/util';
+import {CONSOLE_PADDING} from '../core/globals';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
@@ -17,6 +17,7 @@ export default class LolClient {
     private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
     private summonerSpells?: RiotAPITypes.DDragon.DDragonSummonerSpellDTO;
     private championNamesFuse?: Fuse<RiotAPITypes.DDragon.DDragonChampionListDataDTO>;
+    private runes?: RiotAPITypes.DDragon.DDragonRunesReforgedDTO[];
 
     private constructor() {
         if (!process.env.RIOT_TOKEN) {
@@ -39,8 +40,9 @@ export default class LolClient {
         this.items = await this.rAPI.ddragon.items();
         this.champions = await this.rAPI.ddragon.champion.all();
         this.summonerSpells = await this.rAPI.ddragon.summonerSpells();
+        this.runes = await this.rAPI.ddragon.runesReforged();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
+        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), {keys: ['name']});
         console.log('success');
     }
 
@@ -66,6 +68,14 @@ export default class LolClient {
             throw new Error(`Item with ID ${itemId} not found`);
         }
         return item;
+    }
+
+    public getRuneTree(runeId: number) {
+        const rune = this.runes?.find(rune => rune.id === runeId);
+        if (!rune) {
+            throw new Error(`Rune with ID ${runeId} not found`);
+        }
+        return rune;
     }
 
     public searchChampion(championSearchString: string): number | undefined {

@@ -61,7 +61,7 @@ const initializeRunes = (perks: RiotAPITypes.MatchV5.PerksDTO): Runes => {
             perks: [primaryTreeSelections[0].perk, primaryTreeSelections[1].perk, primaryTreeSelections[2].perk, primaryTreeSelections[3].perk],
         },
         secondaryTree: {
-            id: perks.styles[0].style,
+            id: perks.styles[1].style,
             perks: [secondaryTreeSelections[0].perk, secondaryTreeSelections[1].perk],
         },
         stats: perks.statPerks
