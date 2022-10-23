@@ -8,8 +8,16 @@ export interface Runes {
         perks: number[];
     }
     stats: {
-        offense: number,
-        defense: number,
-        flex: number
+        offense: Stats,
+        defense: Stats,
+        flex: Stats
     };
+}
+
+export enum Stats {
+    ATTACK_SPEED = 5005,
+    ADAPTIVE_FORCE = 5008,
+    ARMOR = 5002,
+    MAGIC_RESIST = 5003,
+    COOLDOWN_REDUCTION = 5007
 }

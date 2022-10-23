@@ -80,7 +80,7 @@ export default class LolClient {
 
     public searchChampion(championSearchString: string): number | undefined {
         const results = this.championNamesFuse?.search(championSearchString);
-        if (!results) {
+        if (!results || !results.length) {
             return undefined;
         }
         return parseInt(results[0].item.key);
