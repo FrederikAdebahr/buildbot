@@ -16,9 +16,9 @@ export function toBuild(itemBuild: ItemBuild): Build {
     return {
         itemIds: itemBuild.items,
         skillLevelUps: itemBuild.skillLevelUps,
-        runes: itemBuild.runes,
+        runeSets: [itemBuild.runes],
         trinket: itemBuild.trinket === Trinket.NO_TRINKET ? Trinket.STEALTH_WARD : itemBuild.trinket,
-        popularity: 0,
+        popularity: 1,
         summonerSpellSets: [toSummonerSpellSet(itemBuild)],
     };
 }
@@ -27,6 +27,6 @@ export function toSummonerSpellSet(itemBuild: ItemBuild): SummonerSpellSet {
     return {
         summonerSpell1: itemBuild.summonerSpell1,
         summonerSpell2: itemBuild.summonerSpell2,
-        popularity: 0,
+        popularity: 1,
     };
 }

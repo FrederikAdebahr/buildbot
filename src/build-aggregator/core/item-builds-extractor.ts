@@ -1,13 +1,14 @@
-import {RiotAPITypes} from '@fightmegg/riot-api';
-import {Presets, SingleBar} from 'cli-progress';
+import { RiotAPITypes } from '@fightmegg/riot-api';
+import { Presets, SingleBar } from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
-import {Build} from '../../common/model/build';
-import {ChampionBuildInformation} from '../../common/model/champion-build-information';
-import {MatchTimeline} from '../model/match-timeline';
-import {toBuild, toChampionBuildInfo} from './item-build-converter';
-import {generateItemBuildsFromMatch} from './item-build-creator';
-import {toMatchTimelines} from './match-timeline-converter';
-import {SummonerSpellSet} from '../../common/model/summoner-spell-set';
+import { Build } from '../../common/model/build';
+import { ChampionBuildInformation } from '../../common/model/champion-build-information';
+import { MatchTimeline } from '../model/match-timeline';
+import { toBuild, toChampionBuildInfo } from './item-build-converter';
+import { generateItemBuildsFromMatch } from './item-build-creator';
+import { toMatchTimelines } from './match-timeline-converter';
+import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
+import { RuneSet } from '../../common/model/rune-set';
 
 export const getItemBuildsForRecentChallengerMatches = async () => {
     const matchIds = await fetchChallengerMatchIds();
@@ -29,7 +30,7 @@ const fetchChallengerMatchIds = async () => {
     let i = 0;
     for (let player of challengerPlayers.entries) {
         // TODO: Remove this
-        if (i >= 3) {
+        if (i >= 4) {
             break;
         }
         progBar.increment();
@@ -106,44 +107,65 @@ const extractItemBuildsForAllMatches = (matchTimelines: MatchTimeline[]) => {
 const filteredAndMergedBuilds = (championBuildInfos: ChampionBuildInformation[]) => {
     const newBuildInfos: ChampionBuildInformation[] = [];
     championBuildInfos.forEach((buildInfo) => {
+        mergeBuildDuplicates(buildInfo.builds);
         const newBuildInfo: ChampionBuildInformation = {
             championId: buildInfo.championId,
             position: buildInfo.position,
-            builds: mergedBuildDuplicates(withoutSubsets(buildInfo.builds)),
+            builds: buildInfo.builds,
         };
         newBuildInfos.push(newBuildInfo);
     });
     return newBuildInfos;
 };
 
-const withoutSubsets = (builds: Build[]) =>
-    builds.filter((build1) => builds.every((build2) => !isSubsetOf(build1, build2) || hasSameItems(build1, build2)));
-
-const hasSameItems = (buildA: Build, buildB: Build) =>
-    isSubsetOf(buildA, buildB) && buildA.itemIds.length === buildB.itemIds.length;
-
-const isSubsetOf = (buildA: Build, buildB: Build) => buildA.itemIds.every((val) => buildB.itemIds.includes(val));
-
-const mergedBuildDuplicates = (builds: Build[]) => {
-    const newBuilds: Build[] = [];
-    for (const build of builds) {
-        const existingBuild = newBuilds.find((addedBuild) => hasSameItems(build, addedBuild));
-        if (!existingBuild) {
-            newBuilds.push(build);
-        } else {
-            build.summonerSpellSets.forEach((summonerSpellSet) => {
-                const existingSummonerSpellSet = existingBuild.summonerSpellSets.find(
-                    (addedSummonerSpellSet) => hasSameSummonerSpells(addedSummonerSpellSet, summonerSpellSet));
-                if (!existingSummonerSpellSet) {
-                    existingBuild.summonerSpellSets.push(summonerSpellSet);
-                } else {
-                    existingSummonerSpellSet.popularity++;
+const mergeBuildDuplicates = (builds: Build[]) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    let current;
+    do {
+        current = builds.length;
+        for (let i = 0; i < builds.length; i++) {
+            for (let j = i + 1; j < builds.length; j++) {
+                if (isSubset(builds[i], builds[j])) {
+                    mergeRunesAndSummonerSpells(builds[j], builds[i]);
+                    builds.splice(i, 1);
+                    break;
                 }
-            });
-            existingBuild.popularity++;
+                if (isSubset(builds[j], builds[i])) {
+                    mergeRunesAndSummonerSpells(builds[i], builds[j]);
+                    builds.splice(j, 1);
+                    break;
+                }
+            }
         }
-    }
-    return newBuilds;
+    } while (current > builds.length);
+};
+
+const mergeRunesAndSummonerSpells = (supersetBuild: Build, subsetBuild: Build) => {
+    subsetBuild.summonerSpellSets.forEach(summonerSpellSet => {
+        const existingSummonerSpellSet = supersetBuild.summonerSpellSets
+            .find(supersetSummonerSpellSet => hasSameSummonerSpells(supersetSummonerSpellSet, summonerSpellSet));
+        if (existingSummonerSpellSet) {
+            existingSummonerSpellSet.popularity += summonerSpellSet.popularity;
+        } else {
+            supersetBuild.summonerSpellSets.push(summonerSpellSet);
+        }
+    });
+    subsetBuild.runeSets.forEach(runeSet => {
+        const existingRuneSet = supersetBuild.runeSets.find(supersetRuneSet => hasSameKeyStone(supersetRuneSet, runeSet));
+        if (existingRuneSet) {
+            existingRuneSet.popularity += runeSet.popularity;
+        } else {
+            supersetBuild.runeSets.push(runeSet);
+        }
+    });
+};
+
+const hasSameKeyStone = (runeSetA: RuneSet, runeSetB: RuneSet) => {
+    return runeSetA.primaryTree.perks[0] === runeSetB.primaryTree.perks[0];
+};
+
+const isSubset = (buildA: Build, buildB: Build) => {
+    return buildA.itemIds.every(item => buildB.itemIds.includes(item));
 };
 
 const hasSameSummonerSpells = (summonerSpellSetA: SummonerSpellSet, summonerSpellSetB: SummonerSpellSet) =>

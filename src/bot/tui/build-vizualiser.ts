@@ -3,11 +3,12 @@ import LolClient from '../../common/client/lol-client';
 import { Build } from '../../common/model/build';
 import { ChampionBuildInformation } from '../../common/model/champion-build-information';
 import {
+    getMostPopularRuneSet,
     getTopThreeBuildsByPopularitySorted,
     getTopTwoSummonerSpellSetsByPopularitySorted,
 } from '../../common/core/build-util';
 import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
-import { Runes } from '../../build-aggregator/model/runes';
+import { RuneSet } from '../../common/model/rune-set';
 
 export async function createBuildMessage(buildInformation: ChampionBuildInformation) {
     const championName = LolClient.getInstance().getChampion(buildInformation.championId).name;
@@ -24,7 +25,8 @@ const buildToString = (build: Build) => {
     const itemNames = build.itemIds.map((itemId) => LolClient.getInstance().getItem(itemId).name);
     const summonerSpellSets = getTopTwoSummonerSpellSetsByPopularitySorted(build.summonerSpellSets);
     const summonerSpellSetStrings = summonerSpellSets.map(summonerSpellSetToString);
-    const runesString = runesToString(build.runes);
+    const runeSet = getMostPopularRuneSet(build.runeSets);
+    const runesString = runesToString(runeSet);
     return `${bold('Item build')}: ${itemNames.join(' \u279c ')}
 ${bold('Summoner spells:')} ${summonerSpellSetStrings.join(', ')}
 ${bold('Runes:')}
@@ -32,7 +34,7 @@ ${bold('Runes:')}
     `;
 };
 
-const runesToString = (runes: Runes) => {
+const runesToString = (runes: RuneSet) => {
     const primaryTree = LolClient.getInstance().getRuneTree(runes.primaryTree.id);
     const secondaryTree = LolClient.getInstance().getRuneTree(runes.secondaryTree.id);
     const primaryTreeNames = primaryTree.slots

@@ -1,10 +1,10 @@
 import {SummonerSpellSet} from './summoner-spell-set';
-import {Runes} from '../../build-aggregator/model/runes';
+import {RuneSet} from './rune-set';
 
 export interface Build {
     itemIds: number[];
     skillLevelUps: number[];
-    runes: Runes;
+    runeSets: RuneSet[];
     trinket: number | undefined;
     summonerSpellSets: SummonerSpellSet[];
     popularity: number;

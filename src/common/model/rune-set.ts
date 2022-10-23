@@ -1,4 +1,4 @@
-export interface Runes {
+export interface RuneSet {
     primaryTree: {
         id: number;
         perks: number[];
@@ -12,6 +12,7 @@ export interface Runes {
         defense: Stats,
         flex: Stats
     };
+    popularity: number;
 }
 
 export enum Stats {

@@ -6,7 +6,7 @@ import {MatchTimeline} from '../model/match-timeline';
 import {Trinket} from '../model/trinket';
 import {JungleItem} from '../model/jungle-items';
 import {Champion} from '../model/champion';
-import {Runes} from '../model/runes';
+import {RuneSet} from '../../common/model/rune-set';
 
 
 export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
@@ -52,7 +52,7 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
     return itemBuildsInMatch;
 };
 
-const initializeRunes = (perks: RiotAPITypes.MatchV5.PerksDTO): Runes => {
+const initializeRunes = (perks: RiotAPITypes.MatchV5.PerksDTO): RuneSet => {
     const primaryTreeSelections = perks.styles[0].selections;
     const secondaryTreeSelections = perks.styles[1].selections;
     return {
@@ -64,12 +64,16 @@ const initializeRunes = (perks: RiotAPITypes.MatchV5.PerksDTO): Runes => {
             id: perks.styles[1].style,
             perks: [secondaryTreeSelections[0].perk, secondaryTreeSelections[1].perk],
         },
-        stats: perks.statPerks
+        stats: perks.statPerks,
+        popularity: 1
     };
 };
 
 const addSkillLevelUpToBuild = (eventParticipantItemBuild: ItemBuild, event: RiotAPITypes.MatchV5.EventDTO) => {
-    eventParticipantItemBuild.skillLevelUps.push(event.skillSlot!);
+    if (!event.skillSlot) {
+        return;
+    }
+    eventParticipantItemBuild.skillLevelUps.push(event.skillSlot);
     return;
 };
 
