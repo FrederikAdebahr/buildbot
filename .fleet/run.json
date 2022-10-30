@@ -1,0 +1,21 @@
+{
+  "configurations": [
+    {
+      "type": "command",
+      "name": "buildbot",
+      "program": "npm",
+      "args": [
+        "start"
+      ]
+    },
+    {
+      "type": "command",
+      "name": "build-aggregator",
+      "program": "npm",
+      "args": [
+        "run",
+        "build-aggregator"
+      ]
+    }
+  ]
+}
