@@ -1,6 +1,6 @@
-import { bold, underscore } from 'discord.js';
+import { bold, inlineCode, underscore } from 'discord.js';
 import LolClient from '../../common/client/lol-client';
-import { Build } from '../../common/model/build';
+import { Build, getSkillName } from '../../common/model/build';
 import { ChampionBuildInformation } from '../../common/model/champion-build-information';
 import {
     getMostPopularRuneSet,
@@ -10,6 +10,7 @@ import {
 import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 import { RuneSet } from '../../common/model/rune-set';
 import { getStatName } from '../../common/model/stats';
+import { level } from 'winston';
 
 export async function createBuildMessage(buildInformation: ChampionBuildInformation) {
     const championName = LolClient.getInstance().getChampion(buildInformation.championId).name;
@@ -27,11 +28,12 @@ const buildToString = (build: Build) => {
     const summonerSpellSets = getTopTwoSummonerSpellSetsByPopularitySorted(build.summonerSpellSets);
     const summonerSpellSetStrings = summonerSpellSets.map(summonerSpellSetToString);
     const runeSet = getMostPopularRuneSet(build.runeSets);
-    const runesString = runesToString(runeSet);
     return `${bold('Item build')}: ${itemNames.join(' \u279c ')}
 ${bold('Summoner spells:')} ${summonerSpellSetStrings.join(', ')}
 ${bold('Runes:')}
-    ${runesString}
+    ${runesToString(runeSet)}
+${bold('Skill order:')}
+    ${skillOrderToString(build.skillLevelUps)}
     `;
 };
 
@@ -50,8 +52,18 @@ const runesToString = (runes: RuneSet) => {
         .join(', ');
     return `${bold(`${primaryTree.name}:`)} ${primaryTreeString}
     ${bold(`${secondaryTree.name}:`)} ${secondaryTreeString}
-    ${bold('Stats:')} ${getStatName(runes.stats.offense)}, ${getStatName(runes.stats.flex)}, ${getStatName(runes.stats.defense)}
-    `;
+    ${bold('Stats:')} ${getStatName(runes.stats.offense)}, ${getStatName(runes.stats.flex)}, ${getStatName(runes.stats.defense)}`;
+};
+
+const skillOrderToString = (skillOrder: number[]) => {
+    const levelsString = skillOrder.map((_, i) => (i + 1).toString()).join('  ');
+    const skillsString = skillOrder.map((skill, index) => {
+        const offset = (index + 1).toString().length - 1;
+        const skillName = getSkillName(skill);
+        return skillName + ' '.repeat(offset);
+    }).join('  ');
+    return `${inlineCode(levelsString)}
+    ${inlineCode(skillsString)}`;
 };
 
 const summonerSpellSetToString = (summonerSpellSet: SummonerSpellSet) =>
