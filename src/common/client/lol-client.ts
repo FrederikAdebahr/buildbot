@@ -1,15 +1,16 @@
-import {PlatformId, RiotAPI, RiotAPITypes} from '@fightmegg/riot-api';
+import { CONSOLE_PADDING } from '../core/globals';
+import { printError } from '../core/util';
+import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import axios from 'axios';
 import Fuse from 'fuse.js';
-import {exit} from 'process';
-import {printError} from '../core/util';
-import {CONSOLE_PADDING} from '../core/globals';
+import { exit } from 'process';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
     private readonly CLUSTER = PlatformId.EUROPE;
     private readonly QUEUE = RiotAPITypes.QUEUE.RANKED_SOLO_5x5;
     private readonly QUEUE_ID = 420;
+    private readonly CHAMPION_ICON_BASE_PATH = '/cdn/12.21.1/img/champion/';
 
     private static instance?: LolClient;
     private readonly rAPI: RiotAPI;
@@ -27,14 +28,14 @@ export default class LolClient {
         this.rAPI = new RiotAPI(process.env.RIOT_TOKEN);
     }
 
-    public static getInstance() {
+    public static getInstance = () => {
         if (!this.instance) {
             this.instance = new LolClient();
         }
         return this.instance;
-    }
+    };
 
-    public async init() {
+    public init = async () => {
         process.stdout.write('Initializing Riot API client...'.padEnd(CONSOLE_PADDING));
         await this.validateToken();
         this.items = await this.rAPI.ddragon.items();
@@ -42,11 +43,11 @@ export default class LolClient {
         this.summonerSpells = await this.rAPI.ddragon.summonerSpells();
         this.runes = await this.rAPI.ddragon.runesReforged();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), {keys: ['name']});
+        this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
         console.log('success');
-    }
+    };
 
-    private async validateToken() {
+    private validateToken = async () => {
         try {
             await axios.get('https://euw1.api.riotgames.com/lol/status/v4/platform-data', {
                 method: 'get',
@@ -60,62 +61,66 @@ export default class LolClient {
                 exit(1);
             }
         }
-    }
+    };
 
-    public getItem(itemId: number) {
+    public getItem = (itemId: number) => {
         const item = this.items?.data[itemId];
         if (!item) {
             throw new Error(`Item with ID ${itemId} not found`);
         }
         return item;
-    }
+    };
 
-    public getRuneTree(runeId: number) {
-        const rune = this.runes?.find(rune => rune.id === runeId);
+    public getRuneTree = (runeId: number) => {
+        const rune = this.runes?.find((rune) => rune.id === runeId);
         if (!rune) {
             throw new Error(`Rune with ID ${runeId} not found`);
         }
         return rune;
-    }
+    };
 
-    public searchChampion(championSearchString: string): number | undefined {
+    public searchChampion = (championSearchString: string) => {
         const results = this.championNamesFuse?.search(championSearchString);
         if (!results || !results.length) {
             return undefined;
         }
         return parseInt(results[0].item.key);
-    }
+    };
 
-    public getChampion(championId: number) {
+    public getChampion = (championId: number) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const champion = Object.entries(this.champions!.data).find(
-            (entry) => entry[1].key === championId.toString(),
+            (entry) => entry[1].key === championId.toString()
         )?.[1];
         if (!champion) {
             throw new Error(`Champion with ID ${championId} not found`);
         }
         return champion;
-    }
+    };
 
-    public getSummonerSpell(summonerSpellId: number) {
+    public getChampionIconUrl = (champion: RiotAPITypes.DDragon.DDragonChampionListDataDTO) => {
+        return this.rAPI.ddragon.host + this.CHAMPION_ICON_BASE_PATH + champion.id + '.png';
+    };
+
+    public getSummonerSpell = (summonerSpellId: number) => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const summonerSpell = Object.entries(this.summonerSpells!.data).find(
-            (entry) => entry[1].key === summonerSpellId.toString(),
+            (entry) => entry[1].key === summonerSpellId.toString()
         )?.[1];
         if (!summonerSpell) {
             throw new Error(`Summoner spell with ID ${summonerSpellId} not found`);
         }
         return summonerSpell;
-    }
+    };
 
-    public async fetchChallengerPlayers() {
+    public fetchChallengerPlayers = async () => {
         return await this.rAPI.league.getChallengerByQueue({
             region: this.REGION,
             queue: this.QUEUE,
         });
-    }
+    };
 
-    public async fetchMatchHistoryForPlayer(player: RiotAPITypes.League.LeagueItemDTO) {
+    public fetchMatchHistoryForPlayer = async (player: RiotAPITypes.League.LeagueItemDTO) => {
         let summoner = await this.rAPI.summoner.getBySummonerId({
             region: this.REGION,
             summonerId: player.summonerId,
@@ -127,19 +132,19 @@ export default class LolClient {
                 queue: this.QUEUE_ID,
             },
         });
-    }
+    };
 
-    public async fetchMatchTimelineById(matchId: string) {
+    public fetchMatchTimelineById = async (matchId: string) => {
         return await this.rAPI.matchV5.getMatchTimelineById({
             cluster: this.CLUSTER,
             matchId,
         });
-    }
+    };
 
-    public async fetchMatchById(matchId: string) {
+    public fetchMatchById = async (matchId: string) => {
         return await this.rAPI.matchV5.getMatchById({
             cluster: this.CLUSTER,
             matchId: matchId,
         });
-    }
+    };
 }

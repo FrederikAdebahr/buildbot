@@ -1,18 +1,9 @@
+import { RuneTree } from './rune-tree';
 import { Stats } from './stats';
 
 export interface RuneSet {
-    primaryTree: {
-        id: number;
-        perks: number[];
-    },
-    secondaryTree: {
-        id: number;
-        perks: number[];
-    }
-    stats: {
-        offense: Stats,
-        defense: Stats,
-        flex: Stats
-    };
+    primaryTree: RuneTree;
+    secondaryTree: RuneTree;
+    stats: Stats;
     popularity: number;
 }

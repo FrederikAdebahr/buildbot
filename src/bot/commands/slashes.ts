@@ -22,14 +22,14 @@ export class Example {
     async build(
         @SlashOption('champion_name', {}) championName: string,
         @SlashOption('position', {}) positionString: string,
-        interaction: CommandInteraction,
+        interaction: CommandInteraction
     ) {
         const position = positionString.toUpperCase() as Position;
         if (!(position in Position)) {
             await interaction.reply(
                 `Please specify a valid position. Valid positions are: ${Object.keys(Position)
                     .join(', ')
-                    .toLowerCase()}`,
+                    .toLowerCase()}`
             );
             return;
         }
@@ -47,11 +47,11 @@ export class Example {
         });
 
         if (!buildInformation) {
-            await interaction.reply('Sorry, we don\'t seem to have any builds available for this champion.');
+            await interaction.reply("Sorry, we don't seem to have any builds available for this champion.");
             return;
         }
 
         const msg = await createBuildMessage(buildInformation);
-        await interaction.reply(msg);
+        await interaction.reply({ embeds: msg, ephemeral: true });
     }
 }

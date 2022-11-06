@@ -1,40 +1,49 @@
-import { bold, inlineCode, underscore } from 'discord.js';
 import LolClient from '../../common/client/lol-client';
+import { getMostPopularRuneSet, getTopThreeBuildsByPopularitySorted } from '../../common/core/build-util';
 import { Build, getSkillName } from '../../common/model/build';
 import { ChampionBuildInformation } from '../../common/model/champion-build-information';
-import {
-    getMostPopularRuneSet,
-    getTopThreeBuildsByPopularitySorted,
-    getTopTwoSummonerSpellSetsByPopularitySorted,
-} from '../../common/core/build-util';
-import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 import { RuneSet } from '../../common/model/rune-set';
-import { getStatName } from '../../common/model/stats';
-import { level } from 'winston';
+import { getStatName } from '../../common/model/stat';
+import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
+import { getRuneTreeColor } from './colors';
+import { bold, EmbedBuilder, inlineCode, italic, underscore } from 'discord.js';
 
 export async function createBuildMessage(buildInformation: ChampionBuildInformation) {
-    const championName = LolClient.getInstance().getChampion(buildInformation.championId).name;
+    const champion = LolClient.getInstance().getChampion(buildInformation.championId);
+    const championIconUrl = LolClient.getInstance().getChampionIconUrl(champion);
     const topThreeBuilds = getTopThreeBuildsByPopularitySorted(buildInformation.builds);
-    const buildStrings = topThreeBuilds.map(buildToString);
-    return `
-Here are the most popular builds for ${bold(championName)} on ${bold(buildInformation.position.toLowerCase())}:
-
-${buildStrings.join('\n')}
-`;
+    return topThreeBuilds.map((build) =>
+        formatBuild(build, champion.name, championIconUrl, buildInformation.position.toLowerCase())
+    );
 }
 
-const buildToString = (build: Build) => {
+const formatBuild = (build: Build, championName: string, championIconUrl: string, position: string) => {
+    const mostPopularRuneSet = getMostPopularRuneSet(build.runeSets);
+    return new EmbedBuilder()
+        .setColor(getRuneTreeColor(mostPopularRuneSet.primaryTree.id))
+        .setTitle(`Build for ${italic(championName)} on ${italic(position)}`)
+        .setThumbnail(championIconUrl)
+        .addFields(
+            { name: 'Items', value: itemBuildToString(build) },
+            { name: 'Summoner spells', value: summonerSpellSetsToString(build.summonerSpellSets) },
+            { name: 'Runes', value: runesToString(mostPopularRuneSet) },
+            { name: 'Skill order', value: skillOrderToString(build.skillLevelUps) }
+        );
+};
+
+const itemBuildToString = (build: Build) => {
     const itemNames = build.itemIds.map((itemId) => LolClient.getInstance().getItem(itemId).name);
-    const summonerSpellSets = getTopTwoSummonerSpellSetsByPopularitySorted(build.summonerSpellSets);
-    const summonerSpellSetStrings = summonerSpellSets.map(summonerSpellSetToString);
-    const runeSet = getMostPopularRuneSet(build.runeSets);
-    return `${bold('Item build')}: ${itemNames.join(' \u279c ')}
-${bold('Summoner spells:')} ${summonerSpellSetStrings.join(', ')}
-${bold('Runes:')}
-    ${runesToString(runeSet)}
-${bold('Skill order:')}
-    ${skillOrderToString(build.skillLevelUps)}
-    `;
+    return itemNames.join(' \u279c ');
+};
+
+const summonerSpellSetsToString = (summonerSpellSets: SummonerSpellSet[]) => {
+    return summonerSpellSets
+        .map((summonerSpellSet) => {
+            const summonerSpell1Name = LolClient.getInstance().getSummonerSpell(summonerSpellSet.summonerSpell1).name;
+            const summonerSpell2Name = LolClient.getInstance().getSummonerSpell(summonerSpellSet.summonerSpell2).name;
+            return `${summonerSpell1Name} & ${summonerSpell2Name}`;
+        })
+        .join(', ');
 };
 
 const runesToString = (runes: RuneSet) => {
@@ -42,31 +51,28 @@ const runesToString = (runes: RuneSet) => {
     const secondaryTree = LolClient.getInstance().getRuneTree(runes.secondaryTree.id);
     const primaryTreeNames = primaryTree.slots
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .map((row, i) => row.runes
-            .find(perk => perk.id === runes.primaryTree.perks[i])!.name);
+        .map((row, i) => row.runes.find((perk) => perk.id === runes.primaryTree.perks[i])!.name);
     primaryTreeNames[0] = underscore(primaryTreeNames[0]);
     const primaryTreeString = primaryTreeNames.join(', ');
     const secondaryTreeString = runes.secondaryTree.perks
-        .map(perkId => secondaryTree.slots.flatMap(slot => slot.runes)
-            .find(perk => perk.id === perkId)?.name)
+        .map((perkId) => secondaryTree.slots.flatMap((slot) => slot.runes).find((perk) => perk.id === perkId)?.name)
         .join(', ');
     return `${bold(`${primaryTree.name}:`)} ${primaryTreeString}
     ${bold(`${secondaryTree.name}:`)} ${secondaryTreeString}
-    ${bold('Stats:')} ${getStatName(runes.stats.offense)}, ${getStatName(runes.stats.flex)}, ${getStatName(runes.stats.defense)}`;
+    ${bold('Stats:')} ${getStatName(runes.stats.offense)}, ${getStatName(runes.stats.flex)}, ${getStatName(
+        runes.stats.defense
+    )}`;
 };
 
 const skillOrderToString = (skillOrder: number[]) => {
-    const levelsString = skillOrder.map((_, i) => (i + 1).toString()).join('  ');
-    const skillsString = skillOrder.map((skill, index) => {
-        const offset = (index + 1).toString().length - 1;
-        const skillName = getSkillName(skill);
-        return skillName + ' '.repeat(offset);
-    }).join('  ');
+    const levelsString = skillOrder.map((_, i) => (i + 1).toString()).join(' ');
+    const skillsString = skillOrder
+        .map((skill, index) => {
+            const offset = (index + 1).toString().length - 1;
+            const skillName = getSkillName(skill);
+            return skillName + ' '.repeat(offset);
+        })
+        .join(' ');
     return `${inlineCode(levelsString)}
     ${inlineCode(skillsString)}`;
 };
-
-const summonerSpellSetToString = (summonerSpellSet: SummonerSpellSet) =>
-    `${summonerSpellToString(summonerSpellSet.summonerSpell1)} & ${summonerSpellToString(summonerSpellSet.summonerSpell2)}`;
-
-const summonerSpellToString = (summonerSpell: number) => LolClient.getInstance().getSummonerSpell(summonerSpell).name;
