@@ -1,0 +1,19 @@
+name: Deploy build-aggregator
+on: [ push ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    container:
+      image: node:18
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Run build-aggregator
+        env:
+          DB_USER: admin
+          DB_NAME: buildbot
+          DB_BUILDS_COLLECTION_NAME: builds
+          DB_CONN_STRING: "mongodb+srv://admin:${{ secrets.DB_PASSWORD }}@buildbot.ytjttwr.mongodb.net"
+        run: |
+          npm ci
+          npm run build-aggregator
