@@ -9,6 +9,7 @@ import {
 } from '../../common/core/build-util';
 import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 import { RuneSet } from '../../common/model/rune-set';
+import { getStatName } from '../../common/model/stats';
 
 export async function createBuildMessage(buildInformation: ChampionBuildInformation) {
     const championName = LolClient.getInstance().getChampion(buildInformation.championId).name;
@@ -49,6 +50,7 @@ const runesToString = (runes: RuneSet) => {
         .join(', ');
     return `${bold(`${primaryTree.name}:`)} ${primaryTreeString}
     ${bold(`${secondaryTree.name}:`)} ${secondaryTreeString}
+    ${bold('Stats:')} ${getStatName(runes.stats.offense)}, ${getStatName(runes.stats.flex)}, ${getStatName(runes.stats.defense)}
     `;
 };
 

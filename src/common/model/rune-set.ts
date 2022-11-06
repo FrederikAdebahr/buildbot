@@ -1,3 +1,5 @@
+import { Stats } from './stats';
+
 export interface RuneSet {
     primaryTree: {
         id: number;
@@ -13,12 +15,4 @@ export interface RuneSet {
         flex: Stats
     };
     popularity: number;
-}
-
-export enum Stats {
-    ATTACK_SPEED = 5005,
-    ADAPTIVE_FORCE = 5008,
-    ARMOR = 5002,
-    MAGIC_RESIST = 5003,
-    COOLDOWN_REDUCTION = 5007
 }
