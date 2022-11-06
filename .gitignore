@@ -4,6 +4,7 @@
 .idea
 .env.local
 yarn.lock
+.DS_Store
 
 # folders
 build
