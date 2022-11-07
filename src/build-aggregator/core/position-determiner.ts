@@ -20,7 +20,7 @@ export const calculatePosition = (
         return Position.SUPPORT;
     }
 
-    const effectiveStopTime = Math.min(frames.length, POSITION_TRACKING_STOP_TIME);
+    const effectiveStopTime = Math.min(frames.length - 1, POSITION_TRACKING_STOP_TIME);
     let averageXPos = 0;
     let averageYPos = 0;
 
