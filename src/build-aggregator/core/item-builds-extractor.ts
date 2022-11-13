@@ -1,4 +1,3 @@
-import { RiotAPITypes } from '@fightmegg/riot-api';
 import { Presets, SingleBar } from 'cli-progress';
 import LolClient from '../../common/client/lol-client';
 import { Build } from '../../common/model/build';
@@ -6,110 +5,87 @@ import { ChampionBuildInformation } from '../../common/model/champion-build-info
 import { MatchTimeline } from '../model/match-timeline';
 import { toBuild, toChampionBuildInfo } from './item-build-converter';
 import { generateItemBuildsFromMatch } from './item-build-creator';
-import { toMatchTimelines } from './match-timeline-converter';
 import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 import { RuneSet } from '../../common/model/rune-set';
+import { toMatchTimeline } from './match-timeline-converter';
+import { collections } from '../../common/services/database.service';
 
-export const getItemBuildsForRecentChallengerMatches = async () => {
+export const processBuilds = async () => {
     const matchIds = await fetchChallengerMatchIds();
-    const matchTimelineDtos = await fetchChallengerMatchTimelines(matchIds);
-    const matchDtos = await fetchChallengerMatches(matchIds);
-    const matchTimelines = toMatchTimelines(matchDtos, matchTimelineDtos);
-    let championBuildInfos = extractItemBuildsForAllMatches(matchTimelines);
-    return filteredAndMergedBuilds(championBuildInfos);
+
+    console.log('Processing matches...');
+    const progBar = new SingleBar({}, Presets.shades_classic);
+    progBar.start(matchIds.size, 0);
+    for (const matchId of matchIds) {
+        const matchTimelineDto = await LolClient.getInstance().fetchMatchTimelineById(matchId);
+        const matchDto = await LolClient.getInstance().fetchMatchById(matchId);
+        const matchTimeline = toMatchTimeline(matchDto, matchTimelineDto);
+        extractItemBuildsForMatch(matchTimeline).forEach(await processBuild);
+        progBar.increment();
+    }
 };
 
 const fetchChallengerMatchIds = async () => {
     let challengerPlayers = await LolClient.getInstance().fetchChallengerPlayers();
     let matchIds = new Set<string>();
 
-    console.log('Fetching challenger players...');
+    console.log('Fetching challenger matches...');
     const progBar = new SingleBar({}, Presets.shades_classic);
     progBar.start(challengerPlayers.entries.length, 0);
 
+    let i = 0;
     for (let player of challengerPlayers.entries) {
+        if (i > 4) {
+            break;
+        }
         progBar.increment();
         let matchHistory = await LolClient.getInstance().fetchMatchHistoryForPlayer(player);
         matchHistory.forEach(Set.prototype.add, matchIds);
+        i++;
     }
 
     progBar.stop();
     return matchIds;
 };
 
-const fetchChallengerMatchTimelines = async (matchIds: Set<string>) => {
-    let matchesTimeLine: RiotAPITypes.MatchV5.MatchTimelineDTO[] = [];
-
-    console.log('Fetching match timelines...');
-    const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchIds.size, 0);
-
-    for (let matchId of matchIds) {
-        progBar.increment();
-        matchesTimeLine.push(await LolClient.getInstance().fetchMatchTimelineById(matchId));
-    }
-
-    progBar.stop();
-    return matchesTimeLine;
-};
-
-const fetchChallengerMatches = async (matchIds: Set<string>) => {
-    let matches: RiotAPITypes.MatchV5.MatchDTO[] = [];
-
-    console.log('Fetching matches...');
-    const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchIds.size, 0);
-
-    for (let matchId of matchIds) {
-        progBar.increment();
-        matches.push(await LolClient.getInstance().fetchMatchById(matchId));
-    }
-    progBar.stop();
-    return matches;
-};
-
-const extractItemBuildsForAllMatches = (matchTimelines: MatchTimeline[]) => {
+const extractItemBuildsForMatch = (matchTimeline: MatchTimeline) => {
     let championBuildInfos: ChampionBuildInformation[] = [];
 
-    console.log('Extracting item builds...');
-    const progBar = new SingleBar({}, Presets.shades_classic);
-    progBar.start(matchTimelines.length, 0);
-
-    for (let matchTimeline of matchTimelines) {
-        progBar.increment();
-        let itemBuildsInMatch = generateItemBuildsFromMatch(matchTimeline);
-        for (let itemBuild of itemBuildsInMatch) {
-            if (!itemBuild.items.length) {
-                continue;
-            }
-            const existingBuildInfo = championBuildInfos.find(
-                (buildInfo) =>
-                    buildInfo.championId === itemBuild.championId && buildInfo.position === itemBuild.position,
-            );
-            if (existingBuildInfo) {
-                existingBuildInfo.builds.push(toBuild(itemBuild));
-            } else {
-                championBuildInfos.push(toChampionBuildInfo(itemBuild));
-            }
+    let itemBuildsInMatch = generateItemBuildsFromMatch(matchTimeline);
+    for (let itemBuild of itemBuildsInMatch) {
+        if (!itemBuild.items.length) {
+            continue;
+        }
+        const existingBuildInfo = championBuildInfos.find(
+            (buildInfo) => buildInfo.championId === itemBuild.championId && buildInfo.position === itemBuild.position
+        );
+        if (existingBuildInfo) {
+            existingBuildInfo.builds.push(toBuild(itemBuild));
+        } else {
+            championBuildInfos.push(toChampionBuildInfo(itemBuild));
         }
     }
 
-    progBar.stop();
     return championBuildInfos;
 };
 
-const filteredAndMergedBuilds = (championBuildInfos: ChampionBuildInformation[]) => {
-    const newBuildInfos: ChampionBuildInformation[] = [];
-    championBuildInfos.forEach((buildInfo) => {
-        mergeBuildDuplicates(buildInfo.builds);
-        const newBuildInfo: ChampionBuildInformation = {
+const processBuild = async (buildInfo: ChampionBuildInformation) => {
+    const buildInfoFilter = {
+        championId: buildInfo.championId,
+        position: buildInfo.position,
+    };
+    const existingBuildInfo = await collections.builds?.findOne(buildInfoFilter);
+    if (existingBuildInfo) {
+        const newBuilds = existingBuildInfo.builds.concat(buildInfo.builds);
+        mergeBuildDuplicates(newBuilds);
+        await collections.builds?.updateOne(buildInfoFilter, { $set: { builds: newBuilds } });
+    } else {
+        await collections.builds?.insertOne({
             championId: buildInfo.championId,
             position: buildInfo.position,
             builds: buildInfo.builds,
-        };
-        newBuildInfos.push(newBuildInfo);
-    });
-    return newBuildInfos;
+        });
+    }
 };
 
 const mergeBuildDuplicates = (builds: Build[]) => {
@@ -135,17 +111,20 @@ const mergeBuildDuplicates = (builds: Build[]) => {
 };
 
 const mergeRunesAndSummonerSpells = (supersetBuild: Build, subsetBuild: Build) => {
-    subsetBuild.summonerSpellSets.forEach(summonerSpellSet => {
-        const existingSummonerSpellSet = supersetBuild.summonerSpellSets
-            .find(supersetSummonerSpellSet => hasSameSummonerSpells(supersetSummonerSpellSet, summonerSpellSet));
+    subsetBuild.summonerSpellSets.forEach((summonerSpellSet) => {
+        const existingSummonerSpellSet = supersetBuild.summonerSpellSets.find((supersetSummonerSpellSet) =>
+            hasSameSummonerSpells(supersetSummonerSpellSet, summonerSpellSet)
+        );
         if (existingSummonerSpellSet) {
             existingSummonerSpellSet.popularity += summonerSpellSet.popularity;
         } else {
             supersetBuild.summonerSpellSets.push(summonerSpellSet);
         }
     });
-    subsetBuild.runeSets.forEach(runeSet => {
-        const existingRuneSet = supersetBuild.runeSets.find(supersetRuneSet => hasSameKeyStone(supersetRuneSet, runeSet));
+    subsetBuild.runeSets.forEach((runeSet) => {
+        const existingRuneSet = supersetBuild.runeSets.find((supersetRuneSet) =>
+            hasSameKeyStone(supersetRuneSet, runeSet)
+        );
         if (existingRuneSet) {
             existingRuneSet.popularity += runeSet.popularity;
         } else {
@@ -159,11 +138,11 @@ const hasSameKeyStone = (runeSetA: RuneSet, runeSetB: RuneSet) => {
 };
 
 const isSubset = (buildA: Build, buildB: Build) => {
-    return buildA.itemIds.every(item => buildB.itemIds.includes(item));
+    return buildA.itemIds.every((item) => buildB.itemIds.includes(item));
 };
 
 const hasSameSummonerSpells = (summonerSpellSetA: SummonerSpellSet, summonerSpellSetB: SummonerSpellSet) =>
-    (summonerSpellSetA.summonerSpell1 === summonerSpellSetB.summonerSpell1
-        || summonerSpellSetA.summonerSpell1 === summonerSpellSetB.summonerSpell2)
-    && (summonerSpellSetA.summonerSpell2 === summonerSpellSetB.summonerSpell1
-        || summonerSpellSetA.summonerSpell2 === summonerSpellSetB.summonerSpell2);
+    (summonerSpellSetA.summonerSpell1 === summonerSpellSetB.summonerSpell1 ||
+        summonerSpellSetA.summonerSpell1 === summonerSpellSetB.summonerSpell2) &&
+    (summonerSpellSetA.summonerSpell2 === summonerSpellSetB.summonerSpell1 ||
+        summonerSpellSetA.summonerSpell2 === summonerSpellSetB.summonerSpell2);

@@ -1,39 +1,33 @@
 import { RiotAPITypes } from '@fightmegg/riot-api';
-import { MatchParticipant } from '../model/match-participant';
 import { MatchTimeline } from '../model/match-timeline';
 import { calculatePosition } from './position-determiner';
+import { MatchParticipant } from '../model/match-participant';
 
-export const toMatchTimelines = (
-    matchDtos: RiotAPITypes.MatchV5.MatchDTO[],
-    matchTimelineDtos: RiotAPITypes.MatchV5.MatchTimelineDTO[],
-) => {
-    let matchTimelines: MatchTimeline[] = [];
-    matchDtos.forEach((matchDto) => {
-        const matchTimelineDto = findMatchTimelineDtoFromMatchDto(matchDto, matchTimelineDtos);
-        matchTimelines.push({
-            matchId: matchTimelineDto.metadata.matchId,
-            participants: toMatchParticipants(matchDto, matchTimelineDto),
-            frames: matchTimelineDto.info.frames,
-        });
-    });
-    return matchTimelines;
-};
+export const toMatchTimeline = (
+    matchDto: RiotAPITypes.MatchV5.MatchDTO,
+    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO
+) =>
+    ({
+        matchId: matchTimelineDto.metadata.matchId,
+        participants: toMatchParticipants(matchDto, matchTimelineDto),
+        frames: matchTimelineDto.info.frames,
+    } as MatchTimeline);
 
 const toMatchParticipants = (
     matchDto: RiotAPITypes.MatchV5.MatchDTO,
-    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO,
+    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO
 ) =>
     matchDto.info.participants.map((participantDto) =>
-        toMatchParticipant(participantDto.participantId, matchDto, matchTimelineDto),
+        toMatchParticipant(participantDto.participantId, matchDto, matchTimelineDto)
     );
 
-function toMatchParticipant(
+const toMatchParticipant = (
     participantId: number,
     matchDto: RiotAPITypes.MatchV5.MatchDTO,
-    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO,
-): MatchParticipant {
+    matchTimelineDto: RiotAPITypes.MatchV5.MatchTimelineDTO
+) => {
     const matchParticipantDto = matchDto.info.participants.find(
-        (participant) => participant.participantId === participantId,
+        (participant) => participant.participantId === participantId
     );
     if (!matchParticipantDto) {
         throw new Error(`No participant with ID ${participantId} found in ParticipantDTOs`);
@@ -46,18 +40,5 @@ function toMatchParticipant(
         position: calculatePosition(matchTimelineDto.info.frames, matchParticipantDto),
         summonerSpell1: matchParticipantDto.summoner1Id,
         summonerSpell2: matchParticipantDto.summoner2Id,
-    };
-}
-
-const findMatchTimelineDtoFromMatchDto = (
-    matchDto: RiotAPITypes.MatchV5.MatchDTO,
-    matchTimelineDtos: RiotAPITypes.MatchV5.MatchTimelineDTO[],
-) => {
-    const matchTimelineDto = matchTimelineDtos.find(
-        (matchTimelineDto) => matchDto.metadata.matchId === matchTimelineDto.metadata.matchId,
-    );
-    if (!matchTimelineDto) {
-        throw new Error(`No MatchDTO found for MatchTimelineDTO with ID ${matchDto.metadata.matchId}`);
-    }
-    return matchTimelineDto;
+    } as MatchParticipant;
 };
