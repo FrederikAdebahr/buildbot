@@ -33,15 +33,10 @@ const fetchChallengerMatchIds = async () => {
     const progBar = new SingleBar({}, Presets.shades_classic);
     progBar.start(challengerPlayers.entries.length, 0);
 
-    let i = 0;
     for (let player of challengerPlayers.entries) {
-        if (i > 4) {
-            break;
-        }
         progBar.increment();
         let matchHistory = await LolClient.getInstance().fetchMatchHistoryForPlayer(player);
         matchHistory.forEach(Set.prototype.add, matchIds);
-        i++;
     }
 
     progBar.stop();
