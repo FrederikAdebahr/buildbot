@@ -6,44 +6,60 @@ import { RuneSet } from '../../common/model/rune-set';
 import { getStatName } from '../../common/model/stat';
 import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 import { getRuneTreeColor } from './colors';
-import { bold, EmbedBuilder, inlineCode, italic, underscore } from 'discord.js';
+import { bold, Client, EmbedBuilder, inlineCode, italic, underscore } from 'discord.js';
+import { getEmojiFromUrl } from '../util';
 
-export async function createBuildMessage(buildInformation: ChampionBuildInformation) {
+export async function createBuildMessage(buildInformation: ChampionBuildInformation, client: Client) {
     const champion = LolClient.getInstance().getChampion(buildInformation.championId);
     const championIconUrl = LolClient.getInstance().getChampionIconUrl(champion);
     const topThreeBuilds = getTopThreeBuildsByPopularitySorted(buildInformation.builds);
     return topThreeBuilds.map((build) =>
-        formatBuild(build, champion.name, championIconUrl, buildInformation.position.toLowerCase())
+        formatBuild(build, champion.name, championIconUrl, buildInformation.position.toLowerCase(), client)
     );
 }
 
-const formatBuild = (build: Build, championName: string, championIconUrl: string, position: string) => {
+const formatBuild = (build: Build, championName: string, championIconUrl: string, position: string, client: Client) => {
     const mostPopularRuneSet = getMostPopularRuneSet(build.runeSets);
     return new EmbedBuilder()
         .setColor(getRuneTreeColor(mostPopularRuneSet.primaryTree.id))
         .setTitle(`Build for ${italic(championName)} on ${italic(position)}`)
         .setThumbnail(championIconUrl)
         .addFields(
-            { name: 'Items', value: itemBuildToString(build) },
-            { name: 'Summoner spells', value: summonerSpellSetsToString(build.summonerSpellSets) },
+            { name: 'Items', value: itemBuildToString(build, client), inline: true },
+            {
+                name: 'Summoner spells',
+                value: summonerSpellSetsToString(build.summonerSpellSets, client),
+                inline: true,
+            },
             { name: 'Runes', value: runesToString(mostPopularRuneSet) },
             { name: 'Skill order', value: skillOrderToString(build.skillLevelUps) }
         );
 };
 
-const itemBuildToString = (build: Build) => {
-    const itemNames = build.itemIds.map((itemId) => LolClient.getInstance().getItem(itemId).name);
+const itemBuildToString = (build: Build, client: Client) => {
+    const itemNames = build.itemIds.map((itemId) => {
+        const item = LolClient.getInstance().getItem(itemId);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return getEmojiFromUrl(item.image.full, client);
+    });
     return itemNames.join(' \u279c ');
 };
 
-const summonerSpellSetsToString = (summonerSpellSets: SummonerSpellSet[]) => {
+const summonerSpellSetsToString = (summonerSpellSets: SummonerSpellSet[], client: Client) => {
     return summonerSpellSets
         .map((summonerSpellSet) => {
-            const summonerSpell1Name = LolClient.getInstance().getSummonerSpell(summonerSpellSet.summonerSpell1).name;
-            const summonerSpell2Name = LolClient.getInstance().getSummonerSpell(summonerSpellSet.summonerSpell2).name;
-            return `${summonerSpell1Name} & ${summonerSpell2Name}`;
+            const summonerSpell1 = LolClient.getInstance().getSummonerSpell(summonerSpellSet.summonerSpell1);
+            const summonerSpell2 = LolClient.getInstance().getSummonerSpell(summonerSpellSet.summonerSpell2);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const summonerSpell1Icon = getEmojiFromUrl(summonerSpell1.image.full, client);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const summonerSpell2Icon = getEmojiFromUrl(summonerSpell2.image.full, client);
+            return `${summonerSpell1Icon} ${summonerSpell2Icon}`;
         })
-        .join(', ');
+        .join(' or ');
 };
 
 const runesToString = (runes: RuneSet) => {

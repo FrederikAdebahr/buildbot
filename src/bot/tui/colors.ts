@@ -2,7 +2,7 @@ export const getRuneTreeColor = (runeTreeId: number) => {
     switch (runeTreeId) {
         // Precision
         case 8000:
-            return '#edc4a5';
+            return '#bfa470';
         // Domination
         case 8100:
             return '#a81243';
@@ -11,10 +11,10 @@ export const getRuneTreeColor = (runeTreeId: number) => {
             return '#414fbc';
         // Inspiration
         case 8300:
-            return '#159573';
+            return '#399aa9';
         // Resolve
         case 8400:
-            return '#399aa9';
+            return '#168927';
         default:
             return null;
     }

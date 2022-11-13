@@ -26,18 +26,19 @@ export class Example {
     ) {
         const position = positionString.toUpperCase() as Position;
         if (!(position in Position)) {
-            await interaction.reply(
-                `Please specify a valid position. Valid positions are: ${Object.keys(Position)
+            await interaction.reply({
+                content: `Please specify a valid position. Valid positions are: ${Object.keys(Position)
                     .join(', ')
-                    .toLowerCase()}`
-            );
+                    .toLowerCase()}`,
+                ephemeral: true,
+            });
             return;
         }
 
         const championId = this.lolClient.searchChampion(championName);
 
         if (!championId) {
-            await interaction.reply('Sorry, I could not find a champion with this name.');
+            await interaction.reply({ content: 'Sorry, I could not find a champion with this name.', ephemeral: true });
             return;
         }
 
@@ -47,11 +48,14 @@ export class Example {
         });
 
         if (!buildInformation) {
-            await interaction.reply("Sorry, we don't seem to have any builds available for this champion.");
+            await interaction.reply({
+                content: "Sorry, we don't seem to have any builds available for this champion.",
+                ephemeral: true,
+            });
             return;
         }
 
-        const msg = await createBuildMessage(buildInformation);
+        const msg = await createBuildMessage(buildInformation, interaction.client);
         await interaction.reply({ embeds: msg, ephemeral: true });
     }
 }
