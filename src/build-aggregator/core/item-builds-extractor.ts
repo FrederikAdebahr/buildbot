@@ -91,11 +91,13 @@ const mergeBuildDuplicates = (builds: Build[]) => {
             for (let j = i + 1; j < builds.length; j++) {
                 if (isSubset(builds[i], builds[j])) {
                     mergeRunesAndSummonerSpells(builds[j], builds[i]);
+                    builds[j].popularity++;
                     builds.splice(i, 1);
                     break;
                 }
                 if (isSubset(builds[j], builds[i])) {
                     mergeRunesAndSummonerSpells(builds[i], builds[j]);
+                    builds[i].popularity++;
                     builds.splice(j, 1);
                     break;
                 }
