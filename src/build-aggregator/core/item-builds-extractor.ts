@@ -14,7 +14,7 @@ export const processBuilds = async () => {
     const matchIds = await fetchChallengerMatchIds();
 
     console.log('Processing matches...');
-    const progBar = new SingleBar({}, Presets.shades_classic);
+    const progBar = new SingleBar({ noTTYOutput: true }, Presets.shades_classic);
     progBar.start(matchIds.size, 0);
     for (const matchId of matchIds) {
         const matchTimelineDto = await LolClient.getInstance().fetchMatchTimelineById(matchId);
@@ -23,6 +23,7 @@ export const processBuilds = async () => {
         extractItemBuildsForMatch(matchTimeline).forEach(await processBuild);
         progBar.increment();
     }
+    progBar.stop();
 };
 
 const fetchChallengerMatchIds = async () => {
@@ -30,15 +31,13 @@ const fetchChallengerMatchIds = async () => {
     let matchIds = new Set<string>();
 
     console.log('Fetching challenger matches...');
-    const progBar = new SingleBar({}, Presets.shades_classic);
+    const progBar = new SingleBar({ noTTYOutput: true }, Presets.shades_classic);
     progBar.start(challengerPlayers.entries.length, 0);
-
     for (let player of challengerPlayers.entries) {
         progBar.increment();
         let matchHistory = await LolClient.getInstance().fetchMatchHistoryForPlayer(player);
         matchHistory.forEach(Set.prototype.add, matchIds);
     }
-
     progBar.stop();
     return matchIds;
 };
