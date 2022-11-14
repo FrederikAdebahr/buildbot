@@ -1,10 +1,10 @@
-name: Deploy build-aggregator
+name: Run build-aggregator
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 12 * * 5"
 jobs:
-  deploy-build-aggregator:
+  run-build-aggregator:
     runs-on: ubuntu-latest
     container:
       image: node:18
