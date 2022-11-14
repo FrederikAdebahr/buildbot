@@ -1,5 +1,5 @@
 import { Position } from '../../common/model/position';
-import {RiotAPITypes} from '@fightmegg/riot-api';
+import { RiotAPITypes } from '@fightmegg/riot-api';
 
 export interface MatchParticipant {
     participantId: number;

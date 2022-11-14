@@ -4,6 +4,7 @@ import { PlatformId, RiotAPI, RiotAPITypes } from '@fightmegg/riot-api';
 import axios from 'axios';
 import Fuse from 'fuse.js';
 import { exit } from 'process';
+import { retryAsync } from 'ts-retry';
 
 export default class LolClient {
     private readonly REGION = PlatformId.EUW1;
@@ -38,13 +39,30 @@ export default class LolClient {
     public init = async () => {
         process.stdout.write('Initializing Riot API client...'.padEnd(CONSOLE_PADDING));
         await this.validateToken();
-        this.items = await this.rAPI.ddragon.items();
-        this.champions = await this.rAPI.ddragon.champion.all();
-        this.summonerSpells = await this.rAPI.ddragon.summonerSpells();
-        this.runes = await this.rAPI.ddragon.runesReforged();
+        this.items = await this.retry(async () => await this.rAPI.ddragon.items());
+        this.champions = await this.retry(async () => await this.rAPI.ddragon.champion.all());
+        this.summonerSpells = await this.retry(async () => await this.rAPI.ddragon.summonerSpells());
+        this.runes = await this.retry(async () => await this.rAPI.ddragon.runesReforged());
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.championNamesFuse = new Fuse(Object.values(this.champions!.data), { keys: ['name'] });
         console.log('success');
+    };
+
+    private retry = async <T>(requestFunction: () => Promise<T>) => {
+        const retryOptions = {
+            delay: 1000,
+            maxTry: 20
+        };
+        try {
+            return await retryAsync(
+                requestFunction,
+                retryOptions
+            );
+        } catch (err) {
+            console.log(`Failed after retrying ${retryOptions.maxTry} times`);
+            console.log(err);
+            exit(1);
+        }
     };
 
     private validateToken = async () => {
@@ -52,8 +70,8 @@ export default class LolClient {
             await axios.get('https://euw1.api.riotgames.com/lol/status/v4/platform-data', {
                 method: 'get',
                 headers: {
-                    'X-Riot-Token': this.rAPI.token,
-                },
+                    'X-Riot-Token': this.rAPI.token
+                }
             });
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.status === 403) {
@@ -114,37 +132,37 @@ export default class LolClient {
     };
 
     public fetchChallengerPlayers = async () => {
-        return await this.rAPI.league.getChallengerByQueue({
+        return await this.retry(async () => await this.rAPI.league.getChallengerByQueue({
             region: this.REGION,
-            queue: this.QUEUE,
-        });
+            queue: this.QUEUE
+        }));
     };
 
     public fetchMatchHistoryForPlayer = async (player: RiotAPITypes.League.LeagueItemDTO) => {
-        let summoner = await this.rAPI.summoner.getBySummonerId({
+        let summoner = await this.retry(async () => await this.rAPI.summoner.getBySummonerId({
             region: this.REGION,
-            summonerId: player.summonerId,
-        });
-        return await this.rAPI.matchV5.getIdsbyPuuid({
+            summonerId: player.summonerId
+        }));
+        return await this.retry(async () => await this.rAPI.matchV5.getIdsbyPuuid({
             cluster: this.CLUSTER,
             puuid: summoner.puuid,
             params: {
-                queue: this.QUEUE_ID,
-            },
-        });
+                queue: this.QUEUE_ID
+            }
+        }));
     };
 
     public fetchMatchTimelineById = async (matchId: string) => {
-        return await this.rAPI.matchV5.getMatchTimelineById({
+        return await this.retry(async () => await this.rAPI.matchV5.getMatchTimelineById({
             cluster: this.CLUSTER,
-            matchId,
-        });
+            matchId
+        }));
     };
 
     public fetchMatchById = async (matchId: string) => {
-        return await this.rAPI.matchV5.getMatchById({
+        return await this.retry(async () => await this.rAPI.matchV5.getMatchById({
             cluster: this.CLUSTER,
-            matchId: matchId,
-        });
+            matchId: matchId
+        }));
     };
 }

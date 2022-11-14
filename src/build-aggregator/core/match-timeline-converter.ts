@@ -10,7 +10,7 @@ export const toMatchTimeline = (
     ({
         matchId: matchTimelineDto.metadata.matchId,
         participants: toMatchParticipants(matchDto, matchTimelineDto),
-        frames: matchTimelineDto.info.frames,
+        frames: matchTimelineDto.info.frames
     } as MatchTimeline);
 
 const toMatchParticipants = (
@@ -39,6 +39,6 @@ const toMatchParticipant = (
         championId: matchParticipantDto.championId,
         position: calculatePosition(matchTimelineDto.info.frames, matchParticipantDto),
         summonerSpell1: matchParticipantDto.summoner1Id,
-        summonerSpell2: matchParticipantDto.summoner2Id,
+        summonerSpell2: matchParticipantDto.summoner2Id
     } as MatchParticipant;
 };

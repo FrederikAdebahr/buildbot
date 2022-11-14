@@ -1,12 +1,12 @@
-import {RiotAPITypes} from '@fightmegg/riot-api';
+import { RiotAPITypes } from '@fightmegg/riot-api';
 import LolClient from '../../common/client/lol-client';
-import {EventType} from '../model/event-type';
-import {ItemBuild} from '../model/item-build';
-import {MatchTimeline} from '../model/match-timeline';
-import {Trinket} from '../model/trinket';
-import {JungleItem} from '../model/jungle-items';
-import {Champion} from '../model/champion';
-import {RuneSet} from '../../common/model/rune-set';
+import { EventType } from '../model/event-type';
+import { ItemBuild } from '../model/item-build';
+import { MatchTimeline } from '../model/match-timeline';
+import { Trinket } from '../model/trinket';
+import { JungleItem } from '../model/jungle-items';
+import { Champion } from '../model/champion';
+import { RuneSet } from '../../common/model/rune-set';
 
 
 export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
@@ -20,12 +20,12 @@ export const generateItemBuildsFromMatch = (matchTimeline: MatchTimeline) => {
         items: [],
         runes: initializeRunes(participant.perks),
         skillLevelUps: [],
-        trinket: participant.championId == Champion.FIDDLESTICKS ? Trinket.SCARECROW_EFFIGY : Trinket.NO_TRINKET,
+        trinket: participant.championId == Champion.FIDDLESTICKS ? Trinket.SCARECROW_EFFIGY : Trinket.NO_TRINKET
     }));
     for (let frame of matchTimeline.frames) {
         for (let event of frame.events) {
             let eventParticipantItemBuild = itemBuildsInMatch.find(
-                (build) => build.participantId === event.participantId,
+                (build) => build.participantId === event.participantId
             );
             if (!eventParticipantItemBuild) {
                 continue;
@@ -58,11 +58,11 @@ const initializeRunes = (perks: RiotAPITypes.MatchV5.PerksDTO): RuneSet => {
     return {
         primaryTree: {
             id: perks.styles[0].style,
-            perks: [primaryTreeSelections[0].perk, primaryTreeSelections[1].perk, primaryTreeSelections[2].perk, primaryTreeSelections[3].perk],
+            perks: [primaryTreeSelections[0].perk, primaryTreeSelections[1].perk, primaryTreeSelections[2].perk, primaryTreeSelections[3].perk]
         },
         secondaryTree: {
             id: perks.styles[1].style,
-            perks: [secondaryTreeSelections[0].perk, secondaryTreeSelections[1].perk],
+            perks: [secondaryTreeSelections[0].perk, secondaryTreeSelections[1].perk]
         },
         stats: perks.statPerks,
         popularity: 1

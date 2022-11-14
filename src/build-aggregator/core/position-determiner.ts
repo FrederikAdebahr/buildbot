@@ -10,7 +10,7 @@ const BOTLATNE_DELIMITER = 4000;
 
 export const calculatePosition = (
     frames: RiotAPITypes.MatchV5.FrameDTO[],
-    participant: RiotAPITypes.MatchV5.ParticipantDTO,
+    participant: RiotAPITypes.MatchV5.ParticipantDTO
 ): Position => {
     if (participant.summoner1Id == SummonerSpell.SMITE || participant.summoner2Id == SummonerSpell.SMITE) {
         return Position.JUNGLE;

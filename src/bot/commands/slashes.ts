@@ -6,7 +6,7 @@ import { collections } from '../../common/services/database.service';
 import { createBuildMessage } from '../tui/build-vizualiser';
 
 @Discord()
-export class Example {
+export class Commands {
     private lolClient: LolClient;
 
     constructor() {
@@ -30,7 +30,7 @@ export class Example {
                 content: `Please specify a valid position. Valid positions are: ${Object.keys(Position)
                     .join(', ')
                     .toLowerCase()}`,
-                ephemeral: true,
+                ephemeral: true
             });
             return;
         }
@@ -44,13 +44,13 @@ export class Example {
 
         const buildInformation = await collections.builds?.findOne({
             championId,
-            position,
+            position
         });
 
         if (!buildInformation) {
             await interaction.reply({
-                content: "Sorry, we don't seem to have any builds available for this champion.",
-                ephemeral: true,
+                content: 'Sorry, we don\'t seem to have any builds available for this champion.',
+                ephemeral: true
             });
             return;
         }

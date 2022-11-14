@@ -66,7 +66,7 @@ const extractItemBuildsForMatch = (matchTimeline: MatchTimeline) => {
 const processBuild = async (buildInfo: ChampionBuildInformation) => {
     const buildInfoFilter = {
         championId: buildInfo.championId,
-        position: buildInfo.position,
+        position: buildInfo.position
     };
     const existingBuildInfo = await collections.builds?.findOne(buildInfoFilter);
     if (existingBuildInfo) {
@@ -77,7 +77,7 @@ const processBuild = async (buildInfo: ChampionBuildInformation) => {
         await collections.builds?.insertOne({
             championId: buildInfo.championId,
             position: buildInfo.position,
-            builds: buildInfo.builds,
+            builds: buildInfo.builds
         });
     }
 };

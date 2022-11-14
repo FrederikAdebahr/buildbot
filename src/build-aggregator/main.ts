@@ -2,6 +2,7 @@ import LolClient from '../common/client/lol-client';
 import { collections, connectToDatabase } from '../common/services/database.service';
 import { processBuilds } from './core/item-builds-extractor';
 import { CONSOLE_PADDING } from '../common/core/globals';
+import { exit } from 'process';
 
 await LolClient.getInstance().init();
 await connectToDatabase();
@@ -12,4 +13,4 @@ console.log('success');
 
 await processBuilds();
 
-process.exit();
+exit();

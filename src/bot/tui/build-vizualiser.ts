@@ -29,7 +29,7 @@ const formatBuild = (build: Build, championName: string, championIconUrl: string
             {
                 name: 'Summoner spells',
                 value: summonerSpellSetsToString(build.summonerSpellSets, client),
-                inline: true,
+                inline: true
             },
             { name: 'Runes', value: runesToString(mostPopularRuneSet) },
             { name: 'Skill order', value: skillOrderToString(build.skillLevelUps) }
