@@ -1,5 +1,9 @@
 import LolClient from '../../common/client/lol-client';
-import { getMostPopularRuneSet, getTopThreeBuildsByPopularitySorted } from '../../common/core/build-util';
+import {
+    getMostPopularRuneSet,
+    getTopThreeBuildsByPopularitySorted,
+    getTopTwoSummonerSpellSetsByPopularitySorted,
+} from '../../common/core/build-util';
 import { Build, getSkillName } from '../../common/model/build';
 import { ChampionBuildInformation } from '../../common/model/champion-build-information';
 import { RuneSet } from '../../common/model/rune-set';
@@ -28,7 +32,7 @@ const formatBuild = (build: Build, championName: string, championIconUrl: string
             { name: 'Items', value: itemBuildToString(build, client), inline: true },
             {
                 name: 'Summoner spells',
-                value: summonerSpellSetsToString(build.summonerSpellSets, client),
+                value: summonerSpellSetsToString(getTopTwoSummonerSpellSetsByPopularitySorted(build.summonerSpellSets), client),
                 inline: true
             },
             { name: 'Runes', value: runesToString(mostPopularRuneSet) },
