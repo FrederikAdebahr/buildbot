@@ -42,7 +42,7 @@ bot.on('messageCreate', (message: Message) => {
 
 await importx(dirname(import.meta.url) + '/commands/**/*.{ts,js}');
 if (!process.env.DISCORD_TOKEN) {
-    throw Error('Could not find BOT_TOKEN in your environment');
+    throw Error('Could not find DISCORD_TOKEN in your environment');
 }
 await LolClient.getInstance().init();
 await connectToDatabase();
