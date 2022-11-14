@@ -125,7 +125,7 @@ const applyUndoToBuild = (itemBuild: ItemBuild, event: RiotAPITypes.MatchV5.Even
 
 const isCompletedItem = (itemId: number) => {
     let item = LolClient.getInstance().getItem(itemId);
-    if (item.consumed) {
+    if (item.consumed || isOrnnItem(item)) {
         return false;
     }
     return !item.into || !item.into.length || hasOrnnItem(item);
@@ -136,5 +136,9 @@ const hasOrnnItem = (item: RiotAPITypes.DDragon.DDragonItemDTO) => {
     if (!potentialOrnnItem) {
         return false;
     }
-    return LolClient.getInstance().getItem(parseInt(potentialOrnnItem))?.requiredAlly != undefined;
+    return isOrnnItem(LolClient.getInstance().getItem(parseInt(potentialOrnnItem)));
+};
+
+const isOrnnItem = (item: RiotAPITypes.DDragon.DDragonItemDTO) => {
+    return item.requiredAlly != undefined;
 };
