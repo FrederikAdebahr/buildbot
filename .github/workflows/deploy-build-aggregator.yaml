@@ -1,5 +1,8 @@
 name: Deploy build-aggregator
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * 5"
 jobs:
   deploy-build-aggregator:
     runs-on: ubuntu-latest
