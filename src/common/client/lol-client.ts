@@ -169,6 +169,7 @@ export default class LolClient {
     };
 
     public getGameVersion = () => {
-        return this.gameVersion;
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return this.gameVersion!;
     };
 }

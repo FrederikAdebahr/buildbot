@@ -9,7 +9,6 @@ import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 import { RuneSet } from '../../common/model/rune-set';
 import { toMatchTimeline } from './match-timeline-converter';
 import { collections } from '../../common/services/database.service';
-import { compare } from 'compare-versions';
 
 export const processBuilds = async () => {
     const matchIds = await fetchChallengerMatchIds();
@@ -19,8 +18,7 @@ export const processBuilds = async () => {
     progBar.start(matchIds.size, 0);
     for (const matchId of matchIds) {
         const matchDto = await LolClient.getInstance().fetchMatchById(matchId);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        if (compare(matchDto.info.gameVersion, LolClient.getInstance().getGameVersion()!, '<')) {
+        if (matchDto.info.gameVersion.localeCompare(LolClient.getInstance().getGameVersion()) < 0) {
             progBar.increment();
             continue;
         }
