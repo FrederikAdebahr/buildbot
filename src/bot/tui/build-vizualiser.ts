@@ -2,16 +2,16 @@ import LolClient from '../../common/client/lol-client';
 import {
     getMostPopularRuneSet,
     getTopThreeBuildsByPopularitySorted,
-    getTopTwoSummonerSpellSetsByPopularitySorted,
+    getTopTwoSummonerSpellSetsByPopularitySorted
 } from '../../common/core/build-util';
 import { Build, getSkillName } from '../../common/model/build';
 import { ChampionBuildInformation } from '../../common/model/champion-build-information';
 import { RuneSet } from '../../common/model/rune-set';
-import { getStatName } from '../../common/model/stat';
 import { SummonerSpellSet } from '../../common/model/summoner-spell-set';
 import { getRuneTreeColor } from './colors';
 import { bold, Client, EmbedBuilder, inlineCode, italic, underscore } from 'discord.js';
-import { getEmojiFromUrl } from '../util';
+import { getBlankEmoji, getEmojiFromUrl } from '../util';
+import { getStatName } from '../../common/model/stat';
 
 export async function createBuildMessage(buildInformation: ChampionBuildInformation, client: Client) {
     const champion = LolClient.getInstance().getChampion(buildInformation.championId);
@@ -29,14 +29,19 @@ const formatBuild = (build: Build, championName: string, championIconUrl: string
         .setTitle(`Build for ${italic(championName)} on ${italic(position)}`)
         .setThumbnail(championIconUrl)
         .addFields(
-            { name: 'Items', value: itemBuildToString(build, client), inline: true },
+            { name: 'Items\n' + getBlankEmoji(client), value: itemBuildToString(build, client) },
             {
-                name: 'Summoner spells',
-                value: summonerSpellSetsToString(getTopTwoSummonerSpellSetsByPopularitySorted(build.summonerSpellSets), client),
-                inline: true
+                name: getBlankEmoji(client) + '\nSummoner spells\n' + getBlankEmoji(client),
+                value: summonerSpellSetsToString(getTopTwoSummonerSpellSetsByPopularitySorted(build.summonerSpellSets), client)
             },
-            { name: 'Runes', value: runesToString(mostPopularRuneSet) },
-            { name: 'Skill order', value: skillOrderToString(build.skillLevelUps) }
+            {
+                name: getBlankEmoji(client) + '\nRunes\n' + getBlankEmoji(client),
+                value: runesToString(mostPopularRuneSet)
+            },
+            {
+                name: getBlankEmoji(client) + '\nSkill order\n' + getBlankEmoji(client),
+                value: skillOrderToString(build.skillLevelUps)
+            }
         );
 };
 
