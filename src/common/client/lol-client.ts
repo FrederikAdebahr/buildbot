@@ -11,12 +11,12 @@ export default class LolClient {
     private readonly CLUSTER = PlatformId.EUROPE;
     private readonly QUEUE = RiotAPITypes.QUEUE.RANKED_SOLO_5x5;
     private readonly QUEUE_ID = 420;
-    private readonly CHAMPION_ICON_BASE_PATH = '/cdn/12.21.1/img/champion/';
 
     private static instance?: LolClient;
     private readonly rAPI: RiotAPI;
     private items?: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
-    private gameVersion?: string;
+    private apiVersion?: string;
+    private championIconPath?: string;
     private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
     private summonerSpells?: RiotAPITypes.DDragon.DDragonSummonerSpellDTO;
     private championNamesFuse?: Fuse<RiotAPITypes.DDragon.DDragonChampionListDataDTO>;
@@ -41,7 +41,8 @@ export default class LolClient {
         process.stdout.write('Initializing Riot API client...'.padEnd(CONSOLE_PADDING));
         await this.validateToken();
         this.items = await this.retry(async () => await this.rAPI.ddragon.items());
-        this.gameVersion = this.items.version;
+        this.apiVersion = this.items.version;
+        this.championIconPath = `/cdn/${this.apiVersion}/img/champion/`;
         this.champions = await this.retry(async () => await this.rAPI.ddragon.champion.all());
         this.summonerSpells = await this.retry(async () => await this.rAPI.ddragon.summonerSpells());
         this.runes = await this.retry(async () => await this.rAPI.ddragon.runesReforged());
@@ -119,7 +120,7 @@ export default class LolClient {
     };
 
     public getChampionIconUrl = (champion: RiotAPITypes.DDragon.DDragonChampionListDataDTO) => {
-        return this.rAPI.ddragon.host + this.CHAMPION_ICON_BASE_PATH + champion.id + '.png';
+        return this.rAPI.ddragon.host + this.championIconPath + champion.id + '.png';
     };
 
     public getSummonerSpell = (summonerSpellId: number) => {
@@ -170,6 +171,6 @@ export default class LolClient {
 
     public getGameVersion = () => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.gameVersion!;
+        return this.apiVersion!;
     };
 }
