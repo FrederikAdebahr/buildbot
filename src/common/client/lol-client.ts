@@ -16,6 +16,7 @@ export default class LolClient {
     private static instance?: LolClient;
     private readonly rAPI: RiotAPI;
     private items?: RiotAPITypes.DDragon.DDragonItemWrapperDTO;
+    private gameVersion?: string;
     private champions?: RiotAPITypes.DDragon.DDragonChampionListDTO;
     private summonerSpells?: RiotAPITypes.DDragon.DDragonSummonerSpellDTO;
     private championNamesFuse?: Fuse<RiotAPITypes.DDragon.DDragonChampionListDataDTO>;
@@ -40,6 +41,7 @@ export default class LolClient {
         process.stdout.write('Initializing Riot API client...'.padEnd(CONSOLE_PADDING));
         await this.validateToken();
         this.items = await this.retry(async () => await this.rAPI.ddragon.items());
+        this.gameVersion = this.items.version;
         this.champions = await this.retry(async () => await this.rAPI.ddragon.champion.all());
         this.summonerSpells = await this.retry(async () => await this.rAPI.ddragon.summonerSpells());
         this.runes = await this.retry(async () => await this.rAPI.ddragon.runesReforged());
@@ -164,5 +166,9 @@ export default class LolClient {
             cluster: this.CLUSTER,
             matchId: matchId
         }));
+    };
+
+    public getGameVersion = () => {
+        return this.gameVersion;
     };
 }
