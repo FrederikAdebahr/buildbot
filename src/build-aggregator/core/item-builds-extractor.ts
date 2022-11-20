@@ -21,6 +21,7 @@ export const processBuilds = async () => {
         const matchDto = await LolClient.getInstance().fetchMatchById(matchId);
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         if (compare(matchDto.info.gameVersion, LolClient.getInstance().getGameVersion()!, '<')) {
+            progBar.increment();
             continue;
         }
         const matchTimelineDto = await LolClient.getInstance().fetchMatchTimelineById(matchId);
