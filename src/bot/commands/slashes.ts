@@ -4,6 +4,7 @@ import LolClient from '../../common/client/lol-client';
 import { Position } from '../../common/model/position';
 import { collections } from '../../common/services/database.service';
 import { createBuildMessage } from '../tui/build-vizualiser';
+import { findClosestPosition } from '../../common/core/util';
 
 @Discord()
 export class Commands {
@@ -24,8 +25,9 @@ export class Commands {
         @SlashOption('position', {}) positionString: string,
         interaction: CommandInteraction
     ) {
-        const position = positionString.toUpperCase() as Position;
-        if (!(position in Position)) {
+        const position = findClosestPosition(positionString.toUpperCase());
+
+        if (!position) {
             await interaction.reply({
                 content: `Please specify a valid position. Valid positions are: ${Object.keys(Position)
                     .join(', ')
