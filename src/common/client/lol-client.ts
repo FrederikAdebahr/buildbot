@@ -53,8 +53,8 @@ export default class LolClient {
 
     private retry = async <T>(requestFunction: () => Promise<T>) => {
         const retryOptions = {
-            delay: 1000,
-            maxTry: 20
+            delay: 2000,
+            maxTry: 100
         };
         try {
             return await retryAsync(
