@@ -2,6 +2,7 @@ import { SummonerSpellSet } from './summoner-spell-set';
 import { RuneSet } from './rune-set';
 
 export interface Build {
+    matchId: string;
     itemIds: number[];
     skillLevelUps: number[];
     runeSets: RuneSet[];

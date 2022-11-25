@@ -14,6 +14,7 @@ export function toChampionBuildInfo(itemBuild: ItemBuild): ChampionBuildInformat
 
 export function toBuild(itemBuild: ItemBuild): Build {
     return {
+        matchId: itemBuild.matchId,
         itemIds: itemBuild.items,
         skillLevelUps: itemBuild.skillLevelUps,
         runeSets: [itemBuild.runes],
