@@ -72,13 +72,13 @@ const processBuild = async (buildInfo: ChampionBuildInformation) => {
         championId: buildInfo.championId,
         position: buildInfo.position
     };
-    const existingBuildInfo = await collections.builds?.findOne(buildInfoFilter);
+    const existingBuildInfo = await collections.temp?.findOne(buildInfoFilter);
     if (existingBuildInfo) {
         const newBuilds = existingBuildInfo.builds.concat(buildInfo.builds);
         mergeBuildDuplicates(newBuilds);
-        await collections.builds?.updateOne(buildInfoFilter, { $set: { builds: newBuilds } });
+        await collections.temp?.updateOne(buildInfoFilter, { $set: { builds: newBuilds } });
     } else {
-        await collections.builds?.insertOne({
+        await collections.temp?.insertOne({
             championId: buildInfo.championId,
             position: buildInfo.position,
             builds: buildInfo.builds
