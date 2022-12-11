@@ -23,4 +23,5 @@ export async function copyToBuildsCollection() {
     await collections.builds?.deleteMany({});
     const cursor = collections.temp.aggregate([{ $out: process.env.DB_BUILDS_COLLECTION_NAME ?? '' }]);
     await cursor.toArray();
+    await collections.temp.drop();
 }
