@@ -17,6 +17,7 @@ jobs:
           DB_USER: admin
           DB_NAME: buildbot
           DB_BUILDS_COLLECTION_NAME: builds
+          DB_TEMP_COLLECTION_NAME: temp
           DB_CONN_STRING: "mongodb+srv://admin:${{ secrets.DB_PASSWORD }}@buildbot.ytjttwr.mongodb.net"
           RIOT_TOKEN: ${{ secrets.RIOT_TOKEN }}
         run: |

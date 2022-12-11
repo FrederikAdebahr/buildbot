@@ -128,7 +128,7 @@ const isCompletedItem = (itemId: number) => {
     if (item.consumed || isOrnnItem(item)) {
         return false;
     }
-    return !item.into || !item.into.length || hasOrnnItem(item);
+    return !item.into?.length || hasOrnnItem(item);
 };
 
 const hasOrnnItem = (item: RiotAPITypes.DDragon.DDragonItemDTO) => {
